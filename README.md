@@ -2,12 +2,12 @@
 
 <!--
   Badges 说明：
-  1. CI 徽章指向 github.com/I-KUN-L1/CodeJudge，若仓库迁移请同步更新。
+  1. CI 徽章指向 github.com/LQK8106/CodeJudge，若仓库迁移请同步更新。
   2. Coverage 为静态数值徽章。CI 每次运行会上传各模块 JaCoCo 报告 artifact
      （jacoco-report-java-21），下载后可查看 HTML 报告；门禁按棘轮式逐版本抬升，
      将最新门禁值更新到下方 badge 数字即可（或接入 Codecov 后替换为动态徽章）。
 -->
-[![CI](https://github.com/I-KUN-L1/CodeJudge/actions/workflows/ci.yml/badge.svg)](https://github.com/I-KUN-L1/CodeJudge/actions/workflows/ci.yml)
+[![CI](https://github.com/LQK8106/CodeJudge/actions/workflows/ci.yml/badge.svg)](https://github.com/LQK8106/CodeJudge/actions/workflows/ci.yml)
 ![Java](https://img.shields.io/badge/Java-21-orange?logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen?logo=springboot&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -177,7 +177,7 @@ codejudge/
 
 </details>
 
-> 基础设施端口已整体避让 [zx-learn](https://github.com/I-KUN-L1/zx-learn)：MySQL 3307 / Redis 6380 / PostgreSQL 5433 / RocketMQ 9877（Broker 10919/10921/10922）/ MinIO 9000/9001（`storage` profile）。
+> 基础设施端口已整体避让 [zx-learn](https://github.com/LQK8106/zx-learn)：MySQL 3307 / Redis 6380 / PostgreSQL 5433 / RocketMQ 9877（Broker 10919/10921/10922）/ MinIO 9000/9001（`storage` profile）。
 
 ---
 
@@ -377,7 +377,7 @@ docker-compose --env-file ../../.env -f docker-compose.monitoring.yml up -d
 ## 📄 许可与说明
 
 - 本项目基于 MIT License 开源，详见 [LICENSE](LICENSE)，仅供学习交流使用。
-- 服务公共底座（common / api / gateway / auth / user）复用自 [zx-learn](https://github.com/I-KUN-L1/zx-learn)（不改动原仓库），按判题业务重新裁剪与改造。
+- 服务公共底座（common / api / gateway / auth / user）复用自 [zx-learn](https://github.com/LQK8106/zx-learn)（不改动原仓库），按判题业务重新裁剪与改造。
 - 生产环境请务必轮换 `.env` 全部密钥并设置 `CJ_ACTUATOR_TOKEN`，勿使用 `.env.example` 中的占位值。
 
 ---
