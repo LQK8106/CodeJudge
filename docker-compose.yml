@@ -365,6 +365,11 @@ services:
     profiles: ["app"]
     restart: always
     stop_grace_period: 40s
+    # 入口以 root 启动，仅用于修复 /cj-sandbox 属主（见 judge-worker/docker-entrypoint.sh），
+    # 随后 setpriv 降回 uid 1001 运行 JVM。daemon 重启后 /cj-sandbox 会重建为 root:root，
+    # 一次性 init 容器不随 daemon 自启 —— 入口自愈保证「重启即恢复判题」，不再产生死信。
+    user: "0:0"
+    entrypoint: ["sh", "/opt/docker-entrypoint.sh"]
     env_file:
       - .env
     environment:
@@ -396,6 +401,10 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       # 与 VM daemon 的路径对齐挂载（T3）：同路径进容器，daemon 才能挂到同样内容
       - /cj-sandbox:/cj-sandbox
+      # 入口脚本：启动时修复 /cj-sandbox 属主并降权（见 docker-entrypoint.sh）
+      - ./judge-worker/docker-entrypoint.sh:/opt/docker-entrypoint.sh:ro
+      # seccomp 源文件：入口每次启动复制到 /cj-sandbox/judge-seccomp.json，避免重启后丢失
+      - ./sandbox/seccomp/judge-seccomp.json:/opt/seccomp-src.json:ro
     depends_on:
       mysql:
         condition: service_healthy
