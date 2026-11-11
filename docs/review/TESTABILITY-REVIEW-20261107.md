@@ -14,6 +14,21 @@
 > 2. 引用本报告时，**不得声称这些问题已经解决、已经关闭或已经实施**；只能表述为「发现 N 项可测性缺口，待验证、待处置」。
 > 3. 若某项确实已被处置，必须有独立的验证证据（提交号 + 对应断言/命令的执行结果），并在此处单独登记；本声明不代替逐项验证。
 
+## ✅ 已处置登记（2026-11-11）
+
+> 以下 6 项（本报告判为「高」的 6 条）均已按「代码/配置整改 + 实跑证据 + 独立验证记录」处置完毕。
+> 每条都能按「验证命令」复跑，验证记录里的数字均为当日实测，不是推断。
+
+| 编号 | 处置提交 | 验证记录 | 验证命令（可复跑） | 结论摘要 |
+|---|---|---|---|---|
+| A-05 | `a0e2b44` | [A-05-VERIFY.md](./A-05-VERIFY.md) | `curl -s -o /dev/null -w '%{http_code}' localhost:9080/jwks`；`py -3 $env:TEMP\a05_burst.py` | `/jwks` **404**；篡改签名 **401**（原 token 200 对照）；并发 12 时 5 放行 / 7 个 **HTTP 429**，静默 4s 后登录 200 |
+| B-05 | `86fb703` | [B-05-VERIFY.md](./B-05-VERIFY.md) | `docker run ... -e ALERTMANAGER_ENV=prod -e ALERTMANAGER_DEFAULT_RECEIVER=null` 后 `docker inspect --format '{{.State.ExitCode}}'` | prod + `receiver=null` **exit 1 拒启**；dev 同配置 WARN 放行；真实投递被 `alert-sink` 收到（816 字节原始报文） |
+| C-04 | `54eabfc` | [C-04-VERIFY.md](./C-04-VERIFY.md) | `SELECT count(*) FROM ai_review WHERE status=1 AND length(btrim(content))=0;`；`mvn -pl judge-ai test -Dtest=AiReviewRepositoryTest` | V2 于 **2026-11-10 16:01:37** 执行并订正 98 行；巡检验收 **0 行**；CHECK 约束在库；降级单测 **4/4 PASS** |
+| D-01 | `482e896` | [D-01-VERIFY.md](./D-01-VERIFY.md) | 提交一次后按响应头 `requestId` 分别 `docker logs` gateway / submission / worker | 同一 id 命中 **1 / 5 / 7** 条；无属性旧消息 WARN + `mq-` 兜底且被正常消费；同线程两条消息 id 不继承 |
+| E-01 | `8d37ae7` | [E-01-KEY-ROTATION-DRILL.md](./E-01-KEY-ROTATION-DRILL.md) | `mvn -pl judge-auth,judge-gateway -am test`；`py -3 scripts/verify-p1-login.py` | 灰度四步无 401 窗口；单测 auth **66** / gateway **28**；登录回归 **43/43**；算法表述已改为「48 字节熵 → base64 64 字符 → HS512」 |
+| E-04 | `4da283a` | [E-04-VERIFY.md](./E-04-VERIFY.md) | 同一镜像 + `--env-file .env` 覆写 `CJ_TOKEN_CONTRACT_VERSION` / `GW_AUTH_URI` 起一次性容器 | 版本不一致**双向**均 exit 1（v2vs v1 / v1 vs v2）；不可达严格拒启、宽松 WARN；`enabled=false` 跳过；回滚口径见 DEPLOYMENT |
+
+
 ## 0. 结论摘要
 
 | 类别 | 检查项 | 高 | 中 | 低 |
