@@ -1,0 +1,82 @@
+﻿2026-11-11 14:25:38.558 INFO  [main] [req=] c.a.nacos.client.logging.NacosLogging : Nacos Logging Adapter Builder: com.alibaba.nacos.logger.adapter.logback12.LogbackNacosLoggingAdapterBuilder
+2026-11-11 14:25:38.561 INFO  [main] [req=] c.a.nacos.client.logging.NacosLogging : Nacos Logging Adapter Builder: com.alibaba.nacos.logger.adapter.logback14.LogbackNacosLoggingAdapterBuilder
+2026-11-11 14:25:38.562 INFO  [main] [req=] c.a.nacos.client.logging.NacosLogging : Nacos Logging Adapter: com.alibaba.nacos.logger.adapter.logback14.LogbackNacosLoggingAdapter match ch.qos.logback.classic.Logger success.
+2026-11-11 14:25:38.568 INFO  [main] [req=] c.a.nacos.client.logging.NacosLogging : Nacos Logging Adapter Builder: com.alibaba.nacos.logger.adapter.log4j2.Log4j2NacosLoggingAdapterBuilder
+2026-11-11 14:25:38.571 INFO  [background-preinit] [req=] o.h.validator.internal.util.Version : HV000001: Hibernate Validator 8.0.1.Final
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.5)
+
+2026-11-11 14:25:38.683 INFO  [main] [req=] c.codejudge.gateway.GatewayApplication : Starting GatewayApplication v1.0.0 using Java 21.0.12.1 with PID 1 (/app/app.jar started by judge in /app)
+2026-11-11 14:25:38.684 INFO  [main] [req=] c.codejudge.gateway.GatewayApplication : No active profile set, falling back to 1 default profile: "default"
+2026-11-11 14:25:39.604 INFO  [main] [req=] o.s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-11-11 14:25:39.606 INFO  [main] [req=] o.s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-11-11 14:25:39.629 INFO  [main] [req=] o.s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 12 ms. Found 0 Redis repository interfaces.
+2026-11-11 14:25:39.796 INFO  [main] [req=] o.s.cloud.context.scope.GenericScope : BeanFactory id=f60d9efa-71a3-38f9-967c-2712d4e26fd3
+2026-11-11 14:25:40.214 WARN  [main] [req=] com.codejudge.gateway.util.JwtUtils : [jwt-keys] 单钥模式（未配置 cj.jwt.keys）：换钥仍需两侧同窗口 + 全员重登
+2026-11-11 14:25:40.548 INFO  [main] [req=] c.c.gateway.filter.AuthGlobalFilter : API 文档白名单：已关闭 —— /v3/api-docs、/doc.html 匿名访问将被 401
+2026-11-11 14:25:40.959 INFO  [main] [req=] o.s.c.g.r.RouteDefinitionRouteLocator : Loaded RoutePredicateFactory [After]
+2026-11-11 14:25:40.959 INFO  [main] [req=] o.s.c.g.r.RouteDefinitionRouteLocator : Loaded RoutePredicateFactory [Before]
+2026-11-11 14:25:40.959 INFO  [main] [req=] o.s.c.g.r.RouteDefinitionRouteLocator : Loaded RoutePredicateFactory [Between]
+2026-11-11 14:25:40.959 INFO  [main] [req=] o.s.c.g.r.RouteDefinitionRouteLocator : Loaded RoutePredicateFactory [Cookie]
+2026-11-11 14:25:40.960 INFO  [main] [req=] o.s.c.g.r.RouteDefinitionRouteLocator : Loaded RoutePredicateFactory [Header]
+2026-11-11 14:25:40.960 INFO  [main] [req=] o.s.c.g.r.RouteDefinitionRouteLocator : Loaded RoutePredicateFactory [Host]
+2026-11-11 14:25:40.960 INFO  [main] [req=] o.s.c.g.r.RouteDefinitionRouteLocator : Loaded RoutePredicateFactory [Method]
+2026-11-11 14:25:40.960 INFO  [main] [req=] o.s.c.g.r.RouteDefinitionRouteLocator : Loaded RoutePredicateFactory [Path]
+2026-11-11 14:25:40.960 INFO  [main] [req=] o.s.c.g.r.RouteDefinitionRouteLocator : Loaded RoutePredicateFactory [Query]
+2026-11-11 14:25:40.960 INFO  [main] [req=] o.s.c.g.r.RouteDefinitionRouteLocator : Loaded RoutePredicateFactory [ReadBody]
+2026-11-11 14:25:40.960 INFO  [main] [req=] o.s.c.g.r.RouteDefinitionRouteLocator : Loaded RoutePredicateFactory [RemoteAddr]
+2026-11-11 14:25:40.960 INFO  [main] [req=] o.s.c.g.r.RouteDefinitionRouteLocator : Loaded RoutePredicateFactory [XForwardedRemoteAddr]
+2026-11-11 14:25:40.960 INFO  [main] [req=] o.s.c.g.r.RouteDefinitionRouteLocator : Loaded RoutePredicateFactory [Weight]
+2026-11-11 14:25:40.960 INFO  [main] [req=] o.s.c.g.r.RouteDefinitionRouteLocator : Loaded RoutePredicateFactory [CloudFoundryRouteService]
+2026-11-11 14:25:41.185 INFO  [main] [req=] o.s.b.a.e.web.EndpointLinksResolver : Exposing 4 endpoints beneath base path '/actuator'
+2026-11-11 14:25:41.490 INFO  [main] [req=] o.s.b.web.embedded.netty.NettyWebServer : Netty started on port 9080 (http)
+2026-11-11 14:25:41.580 INFO  [main] [req=] c.codejudge.gateway.GatewayApplication : Started GatewayApplication in 3.514 seconds (process running for 4.113)
+2026-11-11 14:25:41.826 ERROR [main] [req=] c.c.g.contract.TokenContractCheckRunner : [contract-check] 拒绝启动：token claim 契约版本不一致
+  · 本地(gateway)版本 : v2
+  · 对端(auth)版本   : v1
+  · 对端地址         : http://judge-auth:9081/actuator/info
+  · 处理建议         : 先发布 judge-auth、确认 /actuator/info 已返回新版本，再发布 judge-gateway；
+                       或将两侧 CJ_TOKEN_CONTRACT_VERSION 对齐为同一值。
+                       禁止降级放行 —— claim 结构不一致时合法请求会被判 401，故障只在用户侧可见。
+
+2026-11-11 14:25:41.830 INFO  [main] [req=] o.s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-11-11 14:25:41.857 ERROR [main] [req=] o.springframework.boot.SpringApplication : Application run failed
+java.lang.IllegalStateException: token claim 契约版本不一致: 本地=v2 对端=v1 url=http://judge-auth:9081/actuator/info
+	at com.codejudge.gateway.contract.TokenContractCheckRunner.run(TokenContractCheckRunner.java:79)
+	at org.springframework.boot.SpringApplication.lambda$callRunner$4(SpringApplication.java:786)
+	at org.springframework.util.function.ThrowingConsumer$1.acceptWithException(ThrowingConsumer.java:83)
+	at org.springframework.util.function.ThrowingConsumer.accept(ThrowingConsumer.java:60)
+	at org.springframework.util.function.ThrowingConsumer$1.accept(ThrowingConsumer.java:88)
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:798)
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:786)
+	at org.springframework.boot.SpringApplication.lambda$callRunners$3(SpringApplication.java:774)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(Unknown Source)
+	at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(Unknown Source)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(Unknown Source)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(Unknown Source)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(Unknown Source)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(Unknown Source)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(Unknown Source)
+	at java.base/java.util.stream.ReferencePipeline.forEach(Unknown Source)
+	at org.springframework.boot.SpringApplication.callRunners(SpringApplication.java:774)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:342)
+	at org.springframework.boot.builder.SpringApplicationBuilder.run(SpringApplicationBuilder.java:149)
+	at com.codejudge.gateway.GatewayApplication.main(GatewayApplication.java:15)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source)
+	at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:102)
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:64)
+	at org.springframework.boot.loader.launch.JarLauncher.main(JarLauncher.java:40)
+2026-11-11 14:25:41.866 INFO  [main] [req=] o.s.b.w.embedded.netty.GracefulShutdown : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-11 14:25:41.869 INFO  [netty-shutdown] [req=] o.s.b.w.embedded.netty.GracefulShutdown : Graceful shutdown complete
+2026-11-11 14:25:44.885 WARN  [Thread-2] [req=] c.a.n.common.executor.ThreadPoolManager : [ThreadPoolManager] Start destroying ThreadPool
+2026-11-11 14:25:44.885 WARN  [Thread-2] [req=] c.a.n.common.executor.ThreadPoolManager : [ThreadPoolManager] Destruction of the end

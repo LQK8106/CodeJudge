@@ -17,6 +17,11 @@ management:
         allowed-methods: GET,OPTIONS
         allowed-headers: "*"
         max-age: 3600
+  # E-04：允许 info.* 出现在本服务的 /actuator/info（网关自身也声明契约版本，
+  # 供运维/下游核对；校验方向始终是 gateway 读 auth）。
+  info:
+    env:
+      enabled: true
   endpoint:
     health:
       show-details: always
@@ -187,9 +192,11 @@ spring:
             response-timeout: 900000
 
 # JWT 签名密钥：由环境变量 CJ_JWT_SECRET 注入
+# E-01 多钥灰度换钥：与 judge-auth 同一份配置语义（CJ_JWT_KEYS_0_KID/_SECRET/_ACTIVE）。
+# 网关只验签不签发，会遍历全部密钥（active 优先），无 kid 的历史 token 同样可用。
 cj:
   jwt:
-    secret: ${CJ_JWT_SECRET}
+    secret: ${CJ_JWT_SECRET:}
   gateway:
     # P-10 API 文档白名单开关：true 时 /v3/api-docs、/doc.html 匿名可达（开发/测试态）；
     # 生产必须置 CJ_DOC_WHITELIST_ENABLED=false → 匿名访问文档路径被网关 401。
@@ -202,6 +209,25 @@ cj:
     actuator-guard:
       enabled: ${CJ_ACTUATOR_GUARD_ENABLED:true}
       token: ${CJ_ACTUATOR_TOKEN:}
+  security:
+    # E-04：启动期 token claim 契约校验。网关启动时读 judge-auth 的 /actuator/info
+    # （app.token-claim-contract）并与 expected 比对，不一致直接拒绝启动；对端不可达
+    # 由 fail-on-unreachable 决定（生产 true = 读不到就不启动，本地可置 false 放宽）。
+    # 关闭 enabled 等于回到「发布顺序错误只能由用户发现」的旧状态，生产不得关闭。
+    contract-check:
+      enabled: ${CJ_CONTRACT_CHECK_ENABLED:true}
+      auth-base-url: ${GW_AUTH_URI:http://localhost:9081}
+      expected: ${CJ_TOKEN_CONTRACT_VERSION:v1}
+      fail-on-unreachable: ${CJ_CONTRACT_CHECK_FAIL_UNREACHABLE:true}
+      max-attempts: ${CJ_CONTRACT_CHECK_MAX_ATTEMPTS:5}
+      retry-delay-ms: ${CJ_CONTRACT_CHECK_RETRY_DELAY_MS:1000}
+      request-timeout-ms: ${CJ_CONTRACT_CHECK_TIMEOUT_MS:1500}
+
+# E-04：本端声明的 token claim 契约版本（与 judge-auth 同源，均由 CJ_TOKEN_CONTRACT_VERSION 注入）
+info:
+  app:
+    name: ${spring.application.name}
+    token-claim-contract: ${CJ_TOKEN_CONTRACT_VERSION:v1}
 
 springdoc:
   api-docs:
