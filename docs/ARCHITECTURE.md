@@ -11,7 +11,7 @@
 ```
                         ┌──────────────────────────────┐
      浏览器 / JMeter ───▶│  judge-gateway  :9080        │
-                        │  · JWT 校验（RS256 + JWKS）  │
+                        │  · JWT 校验（HMAC 对称）     │
                         │  · 路由转发（静态实例，无 Nacos）│
                         │  · CORS / requestId 透传     │
                         │  · WebSocket 握手（?token=） │
@@ -83,7 +83,7 @@ judge-auth  judge-user  judge-problem  judge-submission judge-contest judge-ai
 | `judge-common` | — | 公共库：统一响应、异常体系、用户上下文、守卫注解、MQ 封装、WS 信封、雪花 ID、Redis 序列化 | 被所有服务依赖；`R<T>` / `PageDTO` / `CommonException` |
 | `judge-api` | — | 跨服务契约：`Language` 枚举、判题进度/结果消息体 | 只放 DTO，无逻辑；worker 与 submission 共用 |
 | `judge-gateway` | 9080 | 统一入口：JWT 校验、路由、CORS、`user-info`/`role-info` 头注入、WS 握手鉴权 | `AuthGlobalFilter` + `JwtProperties` 白名单 |
-| `judge-auth` | 9081 | 登录（学员/管理员）、令牌刷新、JWKS 公钥、首次登录强制改密、登出 | RS256 签发；账号密码不在本库，经 Feign 查 `judge_user.user` |
+| `judge-auth` | 9081 | 登录（学员/管理员）、令牌刷新、首次登录强制改密、登出 | HMAC 对称签发；账号密码不在本库，经 Feign 查 `judge_user.user` |
 | `judge-user` | 9082 | 用户 CRUD、学员/教师/员工分角色管理、首管理员引导、RBAC 菜单与权限 | `judge_user.user`(BCrypt)；`UserFormDTO` 强校验 |
 | `judge-problem` | 9083 | 题目、题面版本快照、测试用例（含隐藏用例）、标签 | 内部接口 `/internal/problems/**` 供判题机取用例 |
 | `judge-submission` | 9084 | 提交落库、幂等控制、判题任务下发、判题进度 WS 推送、判题机集群视图 | Redis ZSet 队列 + RocketMQ 双通道；`WorkerViewService` |
@@ -106,7 +106,7 @@ judge-auth  judge-user  judge-problem  judge-submission judge-contest judge-ai
                                    ▼
                               judge-user（查 judge_user.user，BCrypt 校验）
                                    │
-                            RS256 签发 accessToken（含 userId/roleId claim）
+                            HMAC 对称签发 accessToken（含 userId/roleId claim）
                                    ▼
                             返回 { accessToken, refreshToken, userId, username }
 ```
@@ -274,3 +274,73 @@ CodeJudge 整体换段：
 
 `WorkerViewService` 的积压指标口径**依赖**对账：若对账失效，`judge_queue_backlog` 会只增不减
 —— 监控上「积压持续单边上涨 + worker 全部空闲」就是对账失效的指纹。
+
+---
+
+## 附录：JWT 签名算法取舍（为什么不用 RS256）
+
+**结论先行**：本系统令牌一律 **HMAC-SHA 对称签名**（不是非对称）。签发方 `judge-auth` 与验签方
+`judge-gateway` 共享同一组密钥（单钥 `CJ_JWT_SECRET`，或 E-01 的 `CJ_JWT_KEYS_<n>_*` 多钥），两端配置必须一致。
+
+| 事实 | 证据 |
+|---|---|
+| 密钥构造 | `judge-auth/.../util/JwtTool.java`：`Keys.hmacShaKeyFor(secret.getBytes(UTF_8))` |
+| 签发 / 验签 | 同文件 `signWith(activeKey)` / 遍历 `Jwts.parser().verifyWith(key)`（多钥时逐一尝试） |
+| 密钥来源 | `judge-auth/src/main/resources/application.yml`、`judge-gateway/src/main/resources/application.yml`，`cj.jwt.secret` / `cj.jwt.keys` |
+| 具体强度 | `Keys.hmacShaKeyFor` 按密钥长度选算法：≥64 字节 → HS512、≥48 → HS384、≥32 → HS256。当前密钥 64 字节，**实际为 HS512**（可由 token 头 `{"alg":"HS512"}` 复核） |
+
+### 为什么对称就够
+
+非对称签名（RS256 一类）的核心收益是「验签方只需公钥」——适用于**验签方不受信或数量不可控**
+的场景（第三方接入、浏览器直连验签、多租户）。本系统恰好相反：
+
+1. **验签方只有网关一个**，且与签发方同处受控内网、同一发布单元；
+2. **没有第三方需要独立验签**：下游服务不解析 JWT，只认网关注入的 `user-info` / `role-info` 头；
+3. 对称签名的开销与密钥管理面都更小：一枚 32 字节以上密钥、一个环境变量，无需密钥对生成、
+   存储、轮换与分发链路。
+
+换言之，引入非对称只会增加一套密钥生命周期管理，却换不到它唯一的收益。
+
+### `/jwks` 为什么删除（2026-09-25）
+
+HMAC 是**对称**算法：`Key.getEncoded()` 的内容就是签名密钥本体，**没有可以安全公开的"公钥"**。
+此前的 `/jwks` 端点把它 base64 后匿名发出，等价于向任何人交出「签发任意身份令牌」的能力，
+属于认证体系级漏洞。修复方式是直接删除端点、白名单与网关路由（方案 A），而不是改为
+非对称以保留该端点 —— 见 `CORE-IMPLEMENTATION.md` §4.4。当前 `GET /jwks` 返回 **404**。
+
+### 密钥轮换（E-01：kid 多钥灰度，2026-11-11 落地）
+
+- **多钥并存**：配置 `cj.jwt.keys`（env 形式 `CJ_JWT_KEYS_<n>_KID / _SECRET / _ACTIVE`）。签发只用
+  `ACTIVE=true` 的那把并在 header 写 `kid`；验签**遍历全部密钥**，无 `kid` 的历史 token 同样命中
+  → 支持「旧钥继续验签、新钥签发」的平滑过渡，观察期内不产生全员 401。
+- **单钥仍兼容**：只配 `CJ_JWT_SECRET` 时退化为单钥模式（启动打 `[jwt-keys] 单钥模式` WARN），
+  语义与改造前一致；该模式换钥仍需双端同窗口 + 全员重登。
+- **灰度 SOP**（双钥并存 → 切 active → 观察期 → 撤旧钥，含每步观测指标与回退方式）见
+  `DEPLOYMENT.md` §8.2。
+- **触发重引入非对称的条件**：出现「验签方不再受信」的需求（例如开放平台让第三方服务
+  自行校验令牌），或需要多签发方。届时才值得放弃对称、改为非对称 + JWKS。
+
+### 三条可复核断言
+
+```bash
+# ① 端点已删除：期望 HTTP 404
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:9080/jwks
+
+# ② 篡改签名：期望 HTTP 401（取一枚合法 accessToken，改掉末位字符后访问受保护接口）
+curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer <被篡改的 token>" \
+     http://localhost:9080/accounts/me/capabilities
+
+# ③ 登录限流：连续错误密码登录，期望第 6 次起 HTTP 429（令牌桶 2 req/s、突发 5）
+for i in $(seq 1 8); do
+  curl -s -o /dev/null -w "$i:%{http_code}\n" -H 'Content-Type: application/json' \
+       -d '{"cellPhone":"13900000001","password":"wrong-password"}' \
+       http://localhost:9080/accounts/login
+done
+```
+
+> ⚠ 两条测试陷阱（2026-11-11 实测踩到）：
+> - 断言②**不能改签名末位**：HS512 签名 64 字节 → base64url 86 字符，末位字符含 4 个填充位，
+>   改它可能不改变解码后的签名，得到「篡改后仍 200」的假结论。要改签名**中段**字符。
+> - 断言③**必须并发发起**：命中令牌桶后的补充速率是 2/s，顺序发 10 次会被补充追平而永不耗尽。
+>   实测 10 并发 → 5×200 + 5×429。测完记得删掉 Redis 里的
+>   `request_rate_limiter.{rate:login:<客户端IP>:anon}.*`，否则本机登录会被限流一分钟左右。

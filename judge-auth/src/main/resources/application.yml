@@ -17,6 +17,11 @@ management:
         allowed-methods: GET,OPTIONS
         allowed-headers: "*"
         max-age: 3600
+  # E-04：允许 info.* 出现在 /actuator/info。该开关默认 false，此时 EnvInfoContributor
+  # 根本不注册 —— 网关启动期读不到 app.token-claim-contract 会直接拒绝启动。
+  info:
+    env:
+      enabled: true
   endpoint:
     health:
       show-details: always
@@ -95,10 +100,21 @@ springdoc:
   swagger-ui:
     enabled: ${CJ_SPRINGDOC_ENABLED:true}
 
+# E-04：token claim 契约版本声明。网关启动时读取本服务的 /actuator/info 并比对。
+# 契约锚定 JWT 的 `type` claim（键名、取值 access/refresh、两枚 token 必填）；
+# 其中任一项变化都必须递增该版本，并同步调整网关的 CJ_TOKEN_CONTRACT_VERSION。
+info:
+  app:
+    name: ${spring.application.name}
+    token-claim-contract: ${CJ_TOKEN_CONTRACT_VERSION:v1}
+
 # JWT 签名密钥：由环境变量 CJ_JWT_SECRET 注入（见项目根目录 .env.example）
+# E-01 多钥灰度换钥：改配 cj.jwt.keys（env 形式 CJ_JWT_KEYS_0_KID/_SECRET/_ACTIVE，
+# 第二把为 CJ_JWT_KEYS_1_*）；签发只用 active=true 的那把，验签遍历全部。
+# 未配置 keys 时退化为单钥模式（启动打 WARN），换钥仍需两侧同窗口 + 全员重登。
 cj:
   jwt:
-    secret: ${CJ_JWT_SECRET}
+    secret: ${CJ_JWT_SECRET:}
   admin-bootstrap:
     # 首个管理员初始凭据落盘路径（相对应用根目录）；由环境变量 CJ_ADMIN_CREDENTIAL_FILE 覆盖
     credential-file: ${CJ_ADMIN_CREDENTIAL_FILE:.bootstrap-credentials}

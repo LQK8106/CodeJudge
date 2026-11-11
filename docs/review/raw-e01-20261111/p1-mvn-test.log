@@ -1,0 +1,260 @@
+﻿[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] codejudge                                                          [pom]
+[INFO] judge-common                                                       [jar]
+[INFO] judge-api                                                          [jar]
+[INFO] judge-gateway                                                      [jar]
+[INFO] judge-auth                                                         [jar]
+[INFO] 
+[INFO] ----------------------< com.codejudge:codejudge >-----------------------
+[INFO] Building codejudge 1.0.0                                           [1/5]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (prepare-agent) @ codejudge ---
+[INFO] argLine set to -javaagent:<USER>\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=D:\\1\\CodeJudge\\target\\jacoco.exec
+[INFO] 
+[INFO] ---------------------< com.codejudge:judge-common >---------------------
+[INFO] Building judge-common 1.0.0                                        [2/5]
+[INFO]   from judge-common\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (prepare-agent) @ judge-common ---
+[INFO] argLine set to -javaagent:<USER>\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=D:\\1\\CodeJudge\\judge-common\\target\\jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ judge-common ---
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ judge-common ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ judge-common ---
+[INFO] skip non existing resourceDirectory D:\1\CodeJudge\judge-common\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ judge-common ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ judge-common ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.codejudge.common.domain.RTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.196 s -- in com.codejudge.common.domain.RTest
+[INFO] Running com.codejudge.common.feign.RDecoderTest
+14:15:58.046 [main] WARN com.codejudge.common.feign.RDecoder -- Feign 远程调用业务错误：code=400, msg=参数错误, targetType=com.codejudge.common.feign.RDecoderTest$SampleDTO
+14:15:58.051 [main] WARN com.codejudge.common.feign.RDecoder -- Feign 远程调用业务错误：code=403, msg=无权限, targetType=com.codejudge.common.feign.RDecoderTest$SampleDTO
+14:15:58.051 [main] WARN com.codejudge.common.feign.RDecoder -- Feign 远程调用业务错误：code=500, msg=服务内部错误, targetType=com.codejudge.common.feign.RDecoderTest$SampleDTO
+14:15:58.055 [main] WARN com.codejudge.common.feign.RDecoder -- Feign 远程调用业务错误：code=401, msg=登录凭证无效, targetType=com.codejudge.common.feign.RDecoderTest$SampleDTO
+14:15:58.074 [main] WARN com.codejudge.common.feign.RDecoder -- Feign 远程调用业务错误：code=401, msg=用户名或密码错误, targetType=com.codejudge.common.feign.RDecoderTest$SampleDTO
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.530 s -- in com.codejudge.common.feign.RDecoderTest
+[INFO] Running com.codejudge.common.feign.RDecoderVoidDecodeTest
+14:15:58.355 [main] WARN com.codejudge.common.feign.RDecoder -- Feign 远程调用业务错误：code=400, msg=原密码错误, targetType=void
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.287 s -- in com.codejudge.common.feign.RDecoderVoidDecodeTest
+[INFO] Running com.codejudge.common.interceptor.RoleInterceptorTest
+Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.173 s -- in com.codejudge.common.interceptor.RoleInterceptorTest
+[INFO] Running com.codejudge.common.logging.RequestIdContextTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.146 s -- in com.codejudge.common.logging.RequestIdContextTest
+[INFO] Running com.codejudge.common.mq.RocketMQConsumerContainerTest
+14:15:58.711 [main] ERROR com.codejudge.common.mq.RocketMQConsumerContainer -- 消费消息失败，稍后重试：topic=judge_submission, tag=CREATED, key=null, err=boom
+14:15:58.713 [main] WARN com.codejudge.common.mq.RocketMQConsumerContainer -- 消息未携带有效 requestId，已生成兜底 id=mq-2045a8fb2c704555833735c4b168f523：topic=judge_submission, tag=CREATED, msgId=msg-1
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.codejudge.common.mq.RocketMQConsumerContainerTest
+[INFO] Running com.codejudge.common.mq.RocketMQTemplateTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.codejudge.common.mq.RocketMQTemplateTest
+[INFO] Running com.codejudge.common.utils.InternalOnlyGuardTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.codejudge.common.utils.InternalOnlyGuardTest
+[INFO] Running com.codejudge.common.utils.OwnerAccessGuardTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.codejudge.common.utils.OwnerAccessGuardTest
+[INFO] Running com.codejudge.common.utils.UserContextTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.codejudge.common.utils.UserContextTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 51, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] ----------------------< com.codejudge:judge-api >-----------------------
+[INFO] Building judge-api 1.0.0                                           [3/5]
+[INFO]   from judge-api\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (prepare-agent) @ judge-api ---
+[INFO] argLine set to -javaagent:<USER>\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=D:\\1\\CodeJudge\\judge-api\\target\\jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ judge-api ---
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ judge-api ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ judge-api ---
+[INFO] skip non existing resourceDirectory D:\1\CodeJudge\judge-api\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ judge-api ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ judge-api ---
+[INFO] 
+[INFO] --------------------< com.codejudge:judge-gateway >---------------------
+[INFO] Building judge-gateway 1.0.0                                       [4/5]
+[INFO]   from judge-gateway\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (prepare-agent) @ judge-gateway ---
+[INFO] argLine set to -javaagent:<USER>\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=D:\\1\\CodeJudge\\judge-gateway\\target\\jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ judge-gateway ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ judge-gateway ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ judge-gateway ---
+[INFO] skip non existing resourceDirectory D:\1\CodeJudge\judge-gateway\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ judge-gateway ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ judge-gateway ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.codejudge.gateway.config.GatewayPropertiesTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.600 s -- in com.codejudge.gateway.config.GatewayPropertiesTest
+[INFO] Running com.codejudge.gateway.filter.ActuatorGuardFilterTest
+mvn : OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath h
+as been appended
+所在位置 行:15 字符: 4028
++ ... in;$env:Path"; mvn -pl judge-auth,judge-gateway -am test 2>&1 | Tee-O ...
++                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (OpenJDK 64-Bit ...s been appended:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+WARNING: A Java agent has been loaded dynamically (<USER>\.m2\repository\net\bytebuddy\byte-buddy-agent\1.14.19
+\byte-buddy-agent-1.14.19.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+14:16:05.878 [main] WARN com.codejudge.gateway.filter.ActuatorGuardFilter -- 已拦截非受信来源访问网关 actuator：path=/actuator/prometheus remote=null 原因=来源地址缺失
+14:16:05.986 [main] WARN com.codejudge.gateway.filter.ActuatorGuardFilter -- 已拦截非受信来源访问网关 actuator：path=/actuator/prometheus remote=/8.8.8.8:12345 原因=非内网来源 8.8.8.8
+14:16:05.992 [main] WARN com.codejudge.gateway.filter.ActuatorGuardFilter -- 已拦截非受信来源访问网关 actuator：path=/actuator/prometheus remote=/127.0.0.1:12345 原因=令牌缺失或不匹配
+14:16:05.998 [main] WARN com.codejudge.gateway.filter.ActuatorGuardFilter -- 已拦截非受信来源访问网关 actuator：path=/actuator/prometheus remote=/127.0.0.1:12345 原因=令牌缺失或不匹配
+14:16:06.036 [main] WARN com.codejudge.gateway.filter.ActuatorGuardFilter -- 已拦截非受信来源访问网关 actuator：path=/actuator/prometheus remote=/8.8.8.8:12345 原因=非内网来源 8.8.8.8
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.574 s -- in com.codejudge.gateway.filter.ActuatorGuardFilterTest
+[INFO] Running com.codejudge.gateway.filter.AuthGlobalFilterWhitelistTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in com.codejudge.gateway.filter.AuthGlobalFilterWhitelistTest
+[INFO] Running com.codejudge.gateway.util.JwtUtilsKeyTest
+14:16:06.104 [main] INFO com.codejudge.gateway.util.JwtUtils -- [jwt-keys] 多钥模式：验签密钥 2 把（active 优先）
+14:16:07.396 [main] WARN com.codejudge.gateway.util.JwtUtils -- [jwt-keys] 单钥模式（未配置 cj.jwt.keys）：换钥仍需两侧同窗口 + 全员重登
+14:16:07.400 [main] INFO com.codejudge.gateway.util.JwtUtils -- [jwt-keys] 多钥模式：验签密钥 2 把（active 优先）
+14:16:07.404 [main] INFO com.codejudge.gateway.util.JwtUtils -- [jwt-keys] 多钥模式：验签密钥 2 把（active 优先）
+14:16:07.411 [main] INFO com.codejudge.gateway.util.JwtUtils -- [jwt-keys] 多钥模式：验签密钥 2 把（active 优先）
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.344 s -- in com.codejudge.gateway.util.JwtUtilsKeyTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] ----------------------< com.codejudge:judge-auth >----------------------
+[INFO] Building judge-auth 1.0.0                                          [5/5]
+[INFO]   from judge-auth\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (prepare-agent) @ judge-auth ---
+[INFO] argLine set to -javaagent:<USER>\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=D:\\1\\CodeJudge\\judge-auth\\target\\jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ judge-auth ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ judge-auth ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ judge-auth ---
+[INFO] skip non existing resourceDirectory D:\1\CodeJudge\judge-auth\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ judge-auth ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ judge-auth ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.codejudge.auth.common.util.JwtToolTest
+14:16:11.386 [main] INFO com.codejudge.auth.common.util.JwtTool -- [jwt-keys] 多钥模式：active=key-a 参与验签=[key-a, key-b]
+14:16:11.397 [main] INFO com.codejudge.auth.common.util.JwtTool -- [jwt-keys] 多钥模式：active=key-b 参与验签=[key-b, key-a]
+14:16:11.420 [main] INFO com.codejudge.auth.common.util.JwtTool -- [jwt-keys] 多钥模式：active=key-b 参与验签=[key-b, key-a]
+14:16:11.429 [main] INFO com.codejudge.auth.common.util.JwtTool -- [jwt-keys] 多钥模式：active=key-b 参与验签=[key-b, key-a]
+14:16:11.430 [main] INFO com.codejudge.auth.common.util.JwtTool -- [jwt-keys] 多钥模式：active=key-b 参与验签=[key-b, key-a]
+14:16:11.435 [main] INFO com.codejudge.auth.common.util.JwtTool -- [jwt-keys] 多钥模式：active=key-b 参与验签=[key-b, key-a]
+14:16:11.437 [main] INFO com.codejudge.auth.common.util.JwtTool -- [jwt-keys] 多钥模式：active=key-a 参与验签=[key-a, key-b]
+14:16:11.439 [main] INFO com.codejudge.auth.common.util.JwtTool -- [jwt-keys] 多钥模式：active=key-b 参与验签=[key-b, key-a]
+14:16:11.458 [main] INFO com.codejudge.auth.common.util.JwtTool -- [jwt-keys] 多钥模式：active=key-b 参与验签=[key-b, key-a]
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.192 s -- in com.codejudge.auth.common.util.JwtToolTest
+[INFO] Running com.codejudge.auth.domain.CapabilitiesTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.codejudge.auth.domain.CapabilitiesTest
+[INFO] Running com.codejudge.auth.service.AccountServiceTest
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has bee
+n appended
+WARNING: A Java agent has been loaded dynamically (<USER>\.m2\repository\net\bytebuddy\byte-buddy-agent\1.14.19
+\byte-buddy-agent-1.14.19.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+14:16:16.114 [main] WARN com.codejudge.auth.service.AccountService -- 刷新 token 查询用户状态失败，fail-closed 拒绝续签：userId=100, err=connection refused
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.616 s -- in com.codejudge.auth.service.AccountServiceTest
+[INFO] Running com.codejudge.auth.service.AdminBootstrapServiceTest
+14:16:16.187 [main] WARN com.codejudge.auth.service.AdminBootstrapService -- 已创建首个管理员（初始口令为本次随机生成）并写入 <USER>\AppData\Local\Temp\junit4720821714915075687\.bootstrap-credentials，首次登录后请立即通过 POST /accounts/password/first-change 修改密码
+14:16:16.200 [main] WARN com.codejudge.auth.service.AdminBootstrapService -- 已创建首个管理员（初始口令为本次随机生成）并写入 <USER>\AppData\Local\Temp\junit8402132745154526039\.bootstrap-credentials，首次登录后请立即通过 POST /accounts/password/first-change 修改密码
+14:16:16.219 [main] WARN com.codejudge.auth.service.AdminBootstrapService -- 已创建首个管理员（初始口令为本次随机生成）并写入 <USER>\AppData\Local\Temp\junit14259626239929060873\.bootstrap-credentials，首次登录后请立即通过 POST /accounts/password/first-change 修改密码
+14:16:16.225 [main] WARN com.codejudge.auth.service.AdminBootstrapService -- 已创建首个管理员（初始口令为本次随机生成）并写入 <USER>\AppData\Local\Temp\junit14259626239929060873\second\.bootstrap-credentials，首次登录后请立即通过 POST /accounts/password/first-change 修改密码
+14:16:16.243 [main] WARN com.codejudge.auth.service.AdminBootstrapService -- 已创建首个管理员（初始口令为本次随机生成）并写入 <USER>\AppData\Local\Temp\junit9715143034333762544\.bootstrap-credentials，首次登录后请立即通过 POST /accounts/password/first-change 修改密码
+14:16:16.244 [main] INFO com.codejudge.auth.service.AdminBootstrapService -- 已存在初始凭据文件 <USER>\AppData\Local\Temp\junit9715143034333762544\.bootstrap-credentials，跳过管理员引导
+14:16:16.264 [main] INFO com.codejudge.auth.service.AdminBootstrapService -- 已存在初始凭据文件 <USER>\AppData\Local\Temp\junit10471437581937743445\.bootstrap-credentials，跳过管理员引导
+14:16:16.291 [main] INFO com.codejudge.auth.service.AdminBootstrapService -- tracked 账号（13900000099）修改密码成功，删除初始凭据文件 <USER>\AppData\Local\Temp\junit12535487901105081947\.bootstrap-credentials
+14:16:16.292 [main] INFO com.codejudge.auth.service.AdminBootstrapService -- 首次改密成功，已删除初始凭据文件 <USER>\AppData\Local\Temp\junit12535487901105081947\.bootstrap-credentials
+14:16:16.303 [main] WARN com.codejudge.auth.service.AdminBootstrapService -- 已创建首个管理员（初始口令为本次随机生成）并写入 <USER>\AppData\Local\Temp\junit2844942947877282322\.bootstrap-credentials，首次登录后请立即通过 POST /accounts/password/first-change 修改密码
+14:16:16.327 [main] INFO com.codejudge.auth.service.AdminBootstrapService -- 首次改密成功，已删除初始凭据文件 <USER>\AppData\Local\Temp\junit6660001926337664563\.bootstrap-credentials
+14:16:16.336 [main] INFO com.codejudge.auth.service.AdminBootstrapService -- tracked 账号（13800000000）修改密码成功，删除初始凭据文件 <USER>\AppData\Local\Temp\junit4861901740490905187\.bootstrap-credentials
+14:16:16.337 [main] INFO com.codejudge.auth.service.AdminBootstrapService -- 首次改密成功，已删除初始凭据文件 <USER>\AppData\Local\Temp\junit4861901740490905187\.bootstrap-credentials
+14:16:16.349 [main] INFO com.codejudge.auth.service.AdminBootstrapService -- tracked 账号（13900000098）修改密码成功，删除初始凭据文件 <USER>\AppData\Local\Temp\junit9640382430380569872\.bootstrap-credentials
+14:16:16.350 [main] INFO com.codejudge.auth.service.AdminBootstrapService -- 首次改密成功，已删除初始凭据文件 <USER>\AppData\Local\Temp\junit9640382430380569872\.bootstrap-credentials
+14:16:16.357 [main] INFO com.codejudge.auth.service.AdminBootstrapService -- 已存在管理员账号，跳过管理员引导
+14:16:16.488 [main] WARN com.codejudge.auth.service.AdminBootstrapService -- 已创建首个管理员（初始口令取自 CJ_ADMIN_INIT_PASSWORD）并写入 <USER>\AppData\Local\Temp\junit7417406177855228958\.bootstrap-credentials，首次登录后请立即通过 POST /accounts/password/first-change 修改密码
+14:16:16.496 [main] INFO com.codejudge.auth.service.AdminBootstrapService -- 首次改密成功，已删除初始凭据文件 <USER>\AppData\Local\Temp\junit13699398644114634643\.bootstrap-credentials
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.374 s -- in com.codejudge.auth.service.AdminBootstrapServiceTest
+[INFO] Running com.codejudge.auth.service.CapabilityServiceTest
+14:16:16.530 [main] WARN com.codejudge.auth.service.CapabilityService -- 能力画像请求缺少角色信息：userId=2001, role-info=null
+14:16:16.537 [main] WARN com.codejudge.auth.service.CapabilityService -- 能力画像请求缺少角色信息：userId=2001, role-info=99
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.032 s -- in com.codejudge.auth.service.CapabilityServiceTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 66, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for codejudge 1.0.0:
+[INFO] 
+[INFO] codejudge .......................................... SUCCESS [  0.649 s]
+[INFO] judge-common ....................................... SUCCESS [  6.576 s]
+[INFO] judge-api .......................................... SUCCESS [  0.841 s]
+[INFO] judge-gateway ...................................... SUCCESS [  7.896 s]
+[INFO] judge-auth ......................................... SUCCESS [  9.122 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  25.701 s
+[INFO] Finished at: 2026-11-11T14:16:16+08:00
+[INFO] ------------------------------------------------------------------------

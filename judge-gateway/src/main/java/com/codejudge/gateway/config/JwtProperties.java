@@ -4,6 +4,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -14,8 +15,28 @@ import java.util.List;
 @ConfigurationProperties(prefix = "cj.jwt")
 public class JwtProperties {
 
-    /** 与认证服务一致的签名密钥（由环境变量 CJ_JWT_SECRET 注入, 见 .env.example） */
+    /** 单钥密钥（仅当 {@link #keys} 为空时使用），由环境变量 CJ_JWT_SECRET 注入, 见 .env.example */
     private String secret;
+
+    /**
+     * 多钥（E-01 灰度换钥）：与 judge-auth 同一份配置语义（{@code cj.jwt.keys}，
+     * env 形式 {@code CJ_JWT_KEYS_0_KID / _SECRET / _ACTIVE}）。
+     * 网关只验签不签发，因此会遍历**全部**密钥；无 {@code kid} 的历史 token 同样能命中。
+     */
+    private List<Key> keys = new ArrayList<>();
+
+    @Data
+    public static class Key {
+
+        /** 密钥标识（JWT header 的 kid） */
+        private String kid;
+
+        /** 密钥本体（≥32 字节） */
+        private String secret;
+
+        /** 签发密钥标记：网关不签发，仅用于把该钥排在验签顺序最前 */
+        private boolean active;
+    }
 
     /**
      * 白名单路径: 匿名可达, 只放行"必须匿名"的端点, 写操作一律不放行,
