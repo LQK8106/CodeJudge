@@ -30,6 +30,12 @@ import java.util.List;
 @Repository
 public class AiReviewRepository {
 
+    /** ai_review.status 语义（与 V1__baseline.sql / V2 迁移中的 CHECK 约束一致）。 */
+    private static final int STATUS_DONE = 1;
+    private static final int STATUS_FAILED = 2;
+    /** 成功态正文为空时的失败原因（离线巡检/告警按该值筛查）。 */
+    public static final String ERROR_EMPTY_CONTENT = "EMPTY_CONTENT";
+
     private final JdbcTemplate jdbcTemplate;
 
     public AiReviewRepository(JdbcTemplate jdbcTemplate) {
@@ -77,13 +83,26 @@ public class AiReviewRepository {
      * 是两类完全不同的故障（前者影响回看，后者只影响后续召回），
      * 拆开后可以让正文本地事务化、向量失败仅告警 —— 点评不该因为
      * 一次 embedding 调用失败而丢掉整篇内容。
+     *
+     * <p><b>成功态必须带非空正文</b>：LLM 返回空串（流式零 delta / 网关返回空 body）
+     * 时若仍写 status=1，库里就会出现「已完成但 content=''」的脏记录 —— 用户点开
+     * 点评是空白，监控与统计却把它算作成功，无法区分「真成功」与「静默失败」。
+     * 因此在<b>唯一落库入口</b>强制收口：成功态 + 空白正文 → 降级为失败态并写
+     * {@link #ERROR_EMPTY_CONTENT}，与 V2 迁移里的 DB CHECK 约束形成双层保障。
      */
     public void updateContent(Long id, String content, Integer tokensIn, Integer tokensOut,
                               int status, String errorMsg) {
+        int finalStatus = status;
+        String finalError = errorMsg;
+        if (status == STATUS_DONE && (content == null || content.isBlank())) {
+            log.warn("点评成功态正文为空，降级为失败态 id={}", id);
+            finalStatus = STATUS_FAILED;
+            finalError = ERROR_EMPTY_CONTENT;
+        }
         jdbcTemplate.update(
                 "UPDATE ai_review SET content = ?, tokens_in = ?, tokens_out = ?, status = ?, "
                         + "error_msg = ?, update_time = now() WHERE id = ?",
-                content, tokensIn, tokensOut, status, errorMsg, id);
+                content, tokensIn, tokensOut, finalStatus, finalError, id);
     }
 
     /** 更新点评正文的向量（用于历史点评召回）。失败由调用方告警并忽略。 */

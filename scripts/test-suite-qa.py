@@ -3,7 +3,7 @@
 CodeJudge 全面测试套件（API / 鉴权 / 越权 / 安全 / E2E 判题闭环 / 幂等 / 限流）。
 
 运行（需基础设施 + 8 个后端服务已启动）：
-    C:\\Users\\20670\\.workbuddy\\binaries\\python\\envs\\default\\Scripts\\python.exe scripts/test-suite-qa.py
+    <USER>\\.workbuddy\\binaries\\python\\envs\\default\\Scripts\\python.exe scripts/test-suite-qa.py
 
 设计说明：
 - 纯标准库 + requests，不依赖 pytest，可直接在 CI 中以退出码判定。

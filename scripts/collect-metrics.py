@@ -13,13 +13,13 @@ CodeJudge 成果指标采集器 —— 补 verify-p*.py 不产出的**耗时分�
   · judge_e2e_ms   —— 提交受理返回 → 轮询到终态。含容器启停 + 编译 + 全部用例。
                       这是「用户感知的判题等待时间」。
   · sandbox_ms     —— 接口返回的 `timeMs`。**只含沙箱内程序执行本身**，
-                      不含容器启停与编译。面试被追问时这两者必须能分开讲。
+                      不含容器启停与编译。评审追问时这两者必须能分开讲。
   · push_latency_ms—— WS 收到终态帧的本地时刻 − 信封里的服务端 `ts`。
                       同机、单向、含广播调度；跨进程但**同一 OS 时钟源**。
 
 用法（需 8 服务 + 4 沙箱镜像就绪）：
     # 必须用带 websocket-client 的解释器（见 docs/CONTEXT.md §7）
-    C:/Users/20670/.workbuddy/binaries/python/envs/default/Scripts/python.exe \
+    <USER>/.workbuddy/binaries/python/envs/default/Scripts/python.exe \
         scripts/collect-metrics.py
     ... scripts/collect-metrics.py --section judge          # 只测判题耗时
     ... scripts/collect-metrics.py --section ws --n 20      # 只测 WS 推送延迟

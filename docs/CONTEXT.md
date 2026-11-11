@@ -1092,7 +1092,7 @@ pgvector 双路召回（题目知识 + 历史点评）、断线重连（`Last-Ev
   `unset SERVER__PORT SERVER__HOST SERVER_PORT SERVER_HOST`，或显式加 `--server.port=<端口>`。
 - **`.sh` 一律无法执行**：执行 `.sh` 会被路由到 `wsl.exe`，而 `wsl.exe` 在程序黑名单中，命令直接被中止（连单行 `echo` 都跑不起来）。脚本一律用 `.py`；`python` 也须用绝对路径（`python` / `python3` 是 WSL shim，同样撞黑名单）。
   ⚠️ **两个解释器装的包不同，选错会 `ModuleNotFoundError`（2026-09-22 实测）**：
-  `C:\Users\20670\.workbuddy\binaries\python\envs\default\Scripts\python.exe` 有 `requests` + `websocket-client`（**验收/采集脚本用这个**）；
+  `<USER>\.workbuddy\binaries\python\envs\default\Scripts\python.exe` 有 `requests` + `websocket-client`（**验收/采集脚本用这个**）；
   `...\versions\3.13.12\python.exe` **缺 `websocket-client`** → `verify-p4.py` / `collect-metrics.py` 会直接崩在 import。
   判断法：`<python> -c "import websocket"`。
 - **`taskkill`** 须写 `MSYS_NO_PATHCONV=1 taskkill /F /PID <pid>`（`//F` 写法报错）。

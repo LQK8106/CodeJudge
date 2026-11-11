@@ -12,7 +12,7 @@ judge:ws:broadcast）→ 网关 → 前端收帧 的端到端推送延迟。
 时钟同步误差可忽略（结论适用前提，报告已注明）。
 
 口径：
-  样本   = SUB_PROGRESS + SUB_RESULT 帧（判题进度推送本体，简历指标只算这两类）；
+  样本   = SUB_PROGRESS + SUB_RESULT 帧（判题进度推送本体，对外指标只算这两类）；
   参考帧 = CONNECTED / SNAPSHOT（握手即推，走同一条 WS 通道，单列不计入推送延迟）；
   丢帧   = 提交成功但直到超时仍未收到 SUB_RESULT（含连接前已终态）；
   连接失败 = WS 握手失败次数（重试一次后仍失败计 1）。
@@ -224,7 +224,7 @@ def run_conc(tokens, rounds, deadline_s):
 
 
 def pct(sorted_vals, q):
-    """最近秩分位数（与简历口径一致：P50/P95/P99）。"""
+    """最近秩分位数（与对外口径一致：P50/P95/P99）。"""
     if not sorted_vals:
         return None
     idx = max(0, math.ceil(q * len(sorted_vals)) - 1)
@@ -336,7 +336,7 @@ def main():
         print("\n" + "=" * 78)
         print(f"两组合计：n={overall['samples']}  平均={overall['meanMs']}ms  "
               f"P50={overall['p50Ms']}ms  P95={overall['p95Ms']}ms  P99={overall['p99Ms']}ms")
-        print(f"简历回填：WS 推送延迟 P95 {overall['p95Ms']}ms"
+        print(f"报告回填：WS 推送延迟 P95 {overall['p95Ms']}ms"
               f"（{overall['samples']} 次推送样本，1 用户/10 并发两组）")
         print("=" * 78)
 
