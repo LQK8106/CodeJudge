@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:compat": "playwright test"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
