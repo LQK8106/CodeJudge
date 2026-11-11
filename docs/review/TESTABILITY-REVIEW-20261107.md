@@ -19,15 +19,36 @@
 > 以下 6 项（本报告判为「高」的 6 条）均已按「代码/配置整改 + 实跑证据 + 独立验证记录」处置完毕。
 > 每条都能按「验证命令」复跑，验证记录里的数字均为当日实测，不是推断。
 
-| 编号 | 处置提交 | 验证记录 | 验证命令（可复跑） | 结论摘要 |
-|---|---|---|---|---|
-| A-05 | `a0e2b44` | [A-05-VERIFY.md](./A-05-VERIFY.md) | `curl -s -o /dev/null -w '%{http_code}' localhost:9080/jwks`；`py -3 $env:TEMP\a05_burst.py` | `/jwks` **404**；篡改签名 **401**（原 token 200 对照）；并发 12 时 5 放行 / 7 个 **HTTP 429**，静默 4s 后登录 200 |
-| B-05 | `86fb703` | [B-05-VERIFY.md](./B-05-VERIFY.md) | `docker run ... -e ALERTMANAGER_ENV=prod -e ALERTMANAGER_DEFAULT_RECEIVER=null` 后 `docker inspect --format '{{.State.ExitCode}}'` | prod + `receiver=null` **exit 1 拒启**；dev 同配置 WARN 放行；真实投递被 `alert-sink` 收到（816 字节原始报文） |
-| C-04 | `54eabfc` | [C-04-VERIFY.md](./C-04-VERIFY.md) | `SELECT count(*) FROM ai_review WHERE status=1 AND length(btrim(content))=0;`；`mvn -pl judge-ai test -Dtest=AiReviewRepositoryTest` | V2 于 **2026-11-10 16:01:37** 执行并订正 98 行；巡检验收 **0 行**；CHECK 约束在库；降级单测 **4/4 PASS** |
-| D-01 | `482e896` | [D-01-VERIFY.md](./D-01-VERIFY.md) | 提交一次后按响应头 `requestId` 分别 `docker logs` gateway / submission / worker | 同一 id 命中 **1 / 5 / 7** 条；无属性旧消息 WARN + `mq-` 兜底且被正常消费；同线程两条消息 id 不继承 |
-| E-01 | `8d37ae7` | [E-01-KEY-ROTATION-DRILL.md](./E-01-KEY-ROTATION-DRILL.md) | `mvn -pl judge-auth,judge-gateway -am test`；`py -3 scripts/verify-p1-login.py` | 灰度四步无 401 窗口；单测 auth **66** / gateway **28**；登录回归 **43/43**；算法表述已改为「48 字节熵 → base64 64 字符 → HS512」 |
-| E-04 | `4da283a` | [E-04-VERIFY.md](./E-04-VERIFY.md) | 同一镜像 + `--env-file .env` 覆写 `CJ_TOKEN_CONTRACT_VERSION` / `GW_AUTH_URI` 起一次性容器 | 版本不一致**双向**均 exit 1（v2vs v1 / v1 vs v2）；不可达严格拒启、宽松 WARN；`enabled=false` 跳过；回滚口径见 DEPLOYMENT |
+> 表头说明：**「处置提交」= 代码/配置整改所在的提交；「关联文档提交」= 该缺口涉及的文档（SOP / checklist / 契约口径）所在提交**。两者分开列，是因为整改代码与配套文档不一定落在同一笔提交里，只给一个提交号会导致顺着表翻不到文档。
 
+| 编号 | 处置提交 | 关联文档提交 | 验证记录 | 验证命令（可复跑） | 结论摘要 |
+|---|---|---|---|---|---|
+| A-05 | `a0e2b44`（`API-REFERENCE.md`） | `8d37ae7`（`ARCHITECTURE.md`） | [A-05-VERIFY.md](./A-05-VERIFY.md) | `curl -s -o /dev/null -w '%{http_code}' localhost:9080/jwks`；`py -3 $env:TEMP\a05_burst.py` | `/jwks` **404**；篡改签名 **401**（原 token 200 对照）；并发 12 时 5 放行 / 7 个 **HTTP 429**，静默 4s 后登录 200 |
+| B-05 | `86fb703`（含 `alertmanager/README.md` §6.1 / §6.4 验收步骤） | `758ae34`（`LAUNCH-CHECKLIST` A2 / preflight F1 判据） | [B-05-VERIFY.md](./B-05-VERIFY.md) | `docker run ... -e ALERTMANAGER_ENV=prod -e ALERTMANAGER_DEFAULT_RECEIVER=null` 后 `docker inspect --format '{{.State.ExitCode}}'` | prod + `receiver=null` **exit 1 拒启**；dev 同配置 WARN 放行；真实投递被 `alert-sink` 收到（816 字节原始报文） |
+| C-04 | `54eabfc` | **—**（无文档改动；约束定义在迁移 `V2__ai_review_done_requires_content.sql` 内） | [C-04-VERIFY.md](./C-04-VERIFY.md) | `SELECT count(*) FROM ai_review WHERE status=1 AND length(btrim(content))=0;`；`mvn -pl judge-ai test -Dtest=AiReviewRepositoryTest` | V2 于 **2026-11-10 16:01:37** 执行并订正 98 行；巡检验收 **0 行**；CHECK 约束在库；降级单测 **4/4 PASS** |
+| D-01 | `482e896` | **—**（无文档改动；属性键定义在 `judge-common` 的 `Constant.REQUEST_ID_HEADER`） | [D-01-VERIFY.md](./D-01-VERIFY.md) | 提交一次后按响应头 `requestId` 分别 `docker logs` gateway / submission / worker | 同一 id 命中 **1 / 5 / 7** 条；无属性旧消息 WARN + `mq-` 兜底且被正常消费；同线程两条消息 id 不继承 |
+| E-01 | `8d37ae7` | `758ae34`（`DEPLOYMENT` §8.2 换钥四步 SOP + `LAUNCH-CHECKLIST` A1 + `.env.example`） | [E-01-KEY-ROTATION-DRILL.md](./E-01-KEY-ROTATION-DRILL.md) | `mvn -pl judge-auth,judge-gateway -am test`；`py -3 scripts/verify-p1-login.py` | 灰度四步无 401 窗口；单测 auth **66** / gateway **28**；登录回归 **43/43**；算法表述已改为「48 字节熵 → base64 64 字符 → HS512」 |
+| E-04 | `4da283a` | `758ae34`（`DEPLOYMENT` §8.5 反向演练 + `LAUNCH-CHECKLIST` D2） | [E-04-VERIFY.md](./E-04-VERIFY.md) | 同一镜像 + `--env-file .env` 覆写 `CJ_TOKEN_CONTRACT_VERSION` / `GW_AUTH_URI` 起一次性容器 | 版本不一致**双向**均 exit 1（v2vs v1 / v1 vs v2）；不可达严格拒启、宽松 WARN；`enabled=false` 跳过；回滚口径见 DEPLOYMENT |
+
+
+## ⚠️ 尚未处置的条目（2026-11-11 补记）
+
+> 上表**只覆盖本报告判为「高」的 6 项**。其余 **20 项（中 13 / 低 7）截至 2026-11-11 仍未逐项验证处置状态**——没有对应的变更提交、执行输出或回归证据，因此**一律按上文 2026-11-08 闭环状态声明视为待办，不视为已解决**。
+>
+> **引用约束**：单独引用「已处置登记」表时，**必须同时引用本节**，否则会被读成「26 项已全部处置」。
+
+| 级别 | 项数 | 编号 | 状态 |
+|---|---|---|---|
+| 中 | 13 | A-01、A-02、A-03、A-06、B-01、B-02、B-03、C-01、C-02、C-05、D-02、E-03、E-05 | 待处置（未验证） |
+| 低 | 7 | A-04、B-04、C-03、D-03、D-04、D-05、E-02 | 待处置（未验证） |
+| **合计** | **20** | 6 高（已处置）+ 20 待办 = 26 项 | — |
+
+> **下一批建议从「文档缺失」类切入**（补文档即可测，不需要改代码）。其中三条已验证仍是原样、且影响最直接：
+>
+> - **A-03**：`API-REFERENCE.md#L356` 的 SSE `DELTA` 示例仍写 `data: {"text":"..."}`，而实现推的是 `content`（`perf-test/measure-ai-ttft.py` 按 `ev["content"]` 取正文）。按文档写的客户端会一直拿到空正文。
+> - **A-01 / A-02**：`#L42` 与 `#L273` 仍写 `"code": 1`，而同文件开头明确 `code=200` 为成功。
+>
+> 以上三条为 2026-11-11 实测确认的现状，不是沿用 11-07 的结论。
 
 ## 0. 结论摘要
 
