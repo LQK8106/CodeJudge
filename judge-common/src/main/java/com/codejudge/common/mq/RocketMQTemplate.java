@@ -1,5 +1,7 @@
 package com.codejudge.common.mq;
 
+import com.codejudge.common.constants.Constant;
+import com.codejudge.common.logging.RequestIdContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
@@ -75,10 +77,7 @@ public class RocketMQTemplate {
             return false;
         }
         try {
-            Message msg = new Message(topic, tag, payload.getBytes(StandardCharsets.UTF_8));
-            if (delayLevel > 0) {
-                msg.setDelayTimeLevel(delayLevel);
-            }
+            Message msg = buildMessage(topic, tag, payload, delayLevel);
             SendResult result = producer.send(msg);
             boolean ok = result != null && result.getSendStatus() == SendStatus.SEND_OK;
             log.info("发送 MQ 消息：topic={}, tag={}, ok={}", topic, tag, ok);
@@ -87,5 +86,26 @@ public class RocketMQTemplate {
             log.error("发送 MQ 消息失败：topic={}, tag={}, err={}", topic, tag, e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * 构建消息并把当前线程的 requestId 写进 MQ 用户属性（跨 MQ 链路追踪）。
+     *
+     * <p>选择用户属性而不是消息体字段：不改 DTO / 不增加业务序列化体积，
+     * 且 MQ 控制台可直接看到；旧消息没有该属性时消费端会兜底生成并告警，
+     * 因此不存在兼容性问题。
+     *
+     * <p>无请求上下文（如未覆盖的后台线程）时不写属性，由消费端生成 {@code mq-} 兜底 id。
+     */
+    Message buildMessage(String topic, String tag, String payload, int delayLevel) {
+        Message msg = new Message(topic, tag, payload.getBytes(StandardCharsets.UTF_8));
+        String requestId = RequestIdContext.current();
+        if (RequestIdContext.isSafe(requestId)) {
+            msg.putUserProperty(Constant.REQUEST_ID_HEADER, requestId);
+        }
+        if (delayLevel > 0) {
+            msg.setDelayTimeLevel(delayLevel);
+        }
+        return msg;
     }
 }

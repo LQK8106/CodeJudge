@@ -1,0 +1,5 @@
+﻿2026-11-11 14:19:14.606 INFO  [tomcat-handler-670] [req=f1937e3b174e458881e867869d06d251] c.c.submission.service.SubmissionService : 提交落库成功 submissionId=2120400942868303873 taskId=2120400942956384258 user=2001 problem=4001 language=PYTHON round=0
+2026-11-11 14:19:14.658 INFO  [tomcat-handler-670] [req=f1937e3b174e458881e867869d06d251] c.codejudge.common.mq.RocketMQTemplate : 发送 MQ 消息：topic=judge_submission, tag=CREATED, ok=true
+2026-11-11 14:19:14.658 INFO  [tomcat-handler-670] [req=f1937e3b174e458881e867869d06d251] c.c.submission.mq.JudgeEventPublisher : 投递判题任务：submissionId=2120400942868303873 taskId=2120400942956384258 attempt=0 ok=true
+2026-11-11 14:19:17.037 INFO  [ConsumeMessageThread_cj_submission_result_consumer_4] [req=f1937e3b174e458881e867869d06d251] c.c.submission.mq.ResultEventHandler : 判题结果事件：submissionId=2120400942868303873 verdict=AC score=100 time=76ms mem=16948KB passed=4/4
+2026-11-11 14:19:17.040 INFO  [ConsumeMessageThread_cj_submission_result_consumer_4] [req=f1937e3b174e458881e867869d06d251] c.c.s.s.SubmissionProgressPushService : 推送判题结果：submissionId=2120400942868303873 verdict=AC score=100

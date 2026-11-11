@@ -1,0 +1,6 @@
+﻿login status = 200 requestId-header = 5fd41cc5d6f1472387c72cd1ca282fb6
+submit status = 200 requestId = f1937e3b174e458881e867869d06d251 submissionId = 2120400942868303873
+body = {"code": 200, "msg": "OK", "data": {"id": "2120400942868303873", "userId": 2001, "problemId": 4001, "contestId": 0, "language": "PYTHON", "status": "PENDING", "verdict": null, "score": 0, "timeMs": null, "memoryKb": null, "submitTime": "2026-11-11T14:19:14.564522923", "idempotent": false}, "requestI
+  poll: 200 SUCCESS AC
+RESULT_REQUEST_ID=f1937e3b174e458881e867869d06d251
+RESULT_SUBMISSION_ID=2120400942868303873

@@ -1,11 +1,14 @@
 package com.codejudge.common.mq;
 
+import com.codejudge.common.constants.Constant;
+import com.codejudge.common.logging.RequestIdContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.slf4j.MDC;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -82,18 +85,7 @@ public class RocketMQConsumerContainer {
             });
             c.registerMessageListener((MessageListenerConcurrently) (msgs, context) -> {
                 for (MessageExt msg : msgs) {
-                    try {
-                        MqHandler handler = handlers.stream()
-                                .filter(h -> h.supports(msg.getTopic(), msg.getTags()))
-                                .findFirst().orElse(null);
-                        if (handler == null) {
-                            log.warn("未找到处理器，丢弃消息：topic={}, tag={}", msg.getTopic(), msg.getTags());
-                            continue;
-                        }
-                        handler.handle(msg);
-                    } catch (Exception e) {
-                        log.error("消费消息失败，稍后重试：topic={}, tag={}, key={}, err={}",
-                                msg.getTopic(), msg.getTags(), msg.getKeys(), e.getMessage());
+                    if (!handleOne(msg)) {
                         return ConsumeConcurrentlyStatus.RECONSUME_LATER;
                     }
                 }
@@ -114,6 +106,45 @@ public class RocketMQConsumerContainer {
     public void shutdown() {
         if (consumer != null) {
             consumer.shutdown();
+        }
+    }
+
+    /**
+     * 消费单条消息：把消息携带的 requestId 回填 MDC，处理后恢复。
+     *
+     * <p>旧消息（本次改造前投递）没有 requestId 用户属性：生成 {@code mq-} 兜底 id
+     * 并记 WARN —— 不抛异常、不丢消息。MDC 必须在 finally 恢复：消费线程池会复用线程，
+     * 漏清理会让后续消息串上前一条的 requestId。
+     *
+     * @return false 表示处理失败，需要 RECONSUME_LATER 重投
+     */
+    boolean handleOne(MessageExt msg) {
+        String previous = RequestIdContext.current();
+        String requestId = msg.getUserProperty(Constant.REQUEST_ID_HEADER);
+        if (RequestIdContext.isSafe(requestId)) {
+            MDC.put(Constant.REQUEST_ID_HEADER, requestId);
+        } else {
+            requestId = RequestIdContext.generate("mq-");
+            MDC.put(Constant.REQUEST_ID_HEADER, requestId);
+            log.warn("消息未携带有效 requestId，已生成兜底 id={}：topic={}, tag={}, msgId={}",
+                    requestId, msg.getTopic(), msg.getTags(), msg.getMsgId());
+        }
+        try {
+            MqHandler handler = handlers.stream()
+                    .filter(h -> h.supports(msg.getTopic(), msg.getTags()))
+                    .findFirst().orElse(null);
+            if (handler == null) {
+                log.warn("未找到处理器，丢弃消息：topic={}, tag={}", msg.getTopic(), msg.getTags());
+                return true;
+            }
+            handler.handle(msg);
+            return true;
+        } catch (Exception e) {
+            log.error("消费消息失败，稍后重试：topic={}, tag={}, key={}, err={}",
+                    msg.getTopic(), msg.getTags(), msg.getKeys(), e.getMessage());
+            return false;
+        } finally {
+            RequestIdContext.restore(previous);
         }
     }
 

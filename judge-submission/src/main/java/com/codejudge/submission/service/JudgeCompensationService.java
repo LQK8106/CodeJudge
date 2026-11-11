@@ -3,6 +3,7 @@ package com.codejudge.submission.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.codejudge.api.dto.submission.SubmissionResultMessage;
 import com.codejudge.common.constants.JudgeRedisKeys;
+import com.codejudge.common.logging.RequestIdContext;
 import com.codejudge.common.mq.MqTopics;
 import com.codejudge.common.mq.RocketMQTemplate;
 import com.codejudge.submission.config.JudgeProperties;
@@ -65,9 +66,18 @@ public class JudgeCompensationService {
 
     /**
      * 故障转移扫描：接管租约过期的 JUDGING 任务。
+     *
+     * <p>调度线程没有 HTTP 上下文，进入时生成 {@code cmp-} 前缀的链路 id：
+     * 本次扫描内所有日志与重投消息共享同一个 id，可与用户首次提交区分开。
      */
     @Scheduled(fixedDelay = 10_000, initialDelay = 20_000)
     public void failoverScan() {
+        try (RequestIdContext.Scope ignored = RequestIdContext.open("cmp-")) {
+            doFailoverScan();
+        }
+    }
+
+    private void doFailoverScan() {
         List<JudgeTask> expired = judgeTaskMapper.selectList(new LambdaQueryWrapper<JudgeTask>()
                 .eq(JudgeTask::getStatus, "JUDGING")
                 .lt(JudgeTask::getLeaseExpireAt, LocalDateTime.now())
@@ -99,6 +109,12 @@ public class JudgeCompensationService {
      */
     @Scheduled(fixedDelay = 10_000, initialDelay = 30_000)
     public void rescuePendingScan() {
+        try (RequestIdContext.Scope ignored = RequestIdContext.open("cmp-")) {
+            doRescuePendingScan();
+        }
+    }
+
+    private void doRescuePendingScan() {
         List<JudgeTask> stuck = judgeTaskMapper.selectList(new LambdaQueryWrapper<JudgeTask>()
                 .eq(JudgeTask::getStatus, "PENDING")
                 .lt(JudgeTask::getUpdateTime, LocalDateTime.now().minusNanos(properties.getPendingRescueDelayMs() * 1_000_000))
@@ -122,6 +138,12 @@ public class JudgeCompensationService {
      */
     @Scheduled(fixedDelay = 30_000, initialDelay = 40_000)
     public void deadLetterScan() {
+        try (RequestIdContext.Scope ignored = RequestIdContext.open("cron-")) {
+            doDeadLetterScan();
+        }
+    }
+
+    private void doDeadLetterScan() {
         List<JudgeTask> dead = judgeTaskMapper.selectList(new LambdaQueryWrapper<JudgeTask>()
                 .eq(JudgeTask::getStatus, "DEAD")
                 .last("LIMIT 50"));
@@ -150,6 +172,12 @@ public class JudgeCompensationService {
      */
     @Scheduled(fixedDelay = 60_000, initialDelay = 50_000)
     public void queueReconcileScan() {
+        try (RequestIdContext.Scope ignored = RequestIdContext.open("cron-")) {
+            doQueueReconcileScan();
+        }
+    }
+
+    private void doQueueReconcileScan() {
         Set<String> members = redis.opsForZSet()
                 .range(JudgeRedisKeys.JUDGE_QUEUE_ZSET, 0, QUEUE_RECONCILE_BATCH - 1);
         if (members == null || members.isEmpty()) {
