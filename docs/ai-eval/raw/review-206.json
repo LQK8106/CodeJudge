@@ -1,0 +1,123 @@
+{
+  "sample": {
+    "id": 206,
+    "submission_id": 2118566082780794882,
+    "problem_id": 4001,
+    "review_type": 3,
+    "verdict": "RE",
+    "model": "glm-5.3-flash",
+    "chars": 220,
+    "create_time": "2026-11-07T19:16:30.897710+08:00"
+  },
+  "problemId": 4001,
+  "verdict": "RE",
+  "reviewType": 3,
+  "model": "glm-5.3-flash",
+  "chars": 220,
+  "submission": {
+    "id": 2118566082780794882,
+    "language": "JAVA",
+    "verdict": "RE",
+    "score": 0,
+    "time_ms": 108,
+    "memory_kb": 27032,
+    "compile_info_id": 2118566087241289730
+  },
+  "blockCount": 0,
+  "executability": {
+    "score": 3,
+    "reason": "点评未给出代码块，无可验证对象",
+    "levels": null,
+    "blocks": [],
+    "cmd": null,
+    "logs": ""
+  },
+  "safetyRuleHits": [],
+  "judgeRuns": [
+    {
+      "run": 1,
+      "attempts": 1,
+      "validation": "v3-evidence-punct",
+      "finish": "stop",
+      "usage": {
+        "completion_tokens": 146,
+        "prompt_tokens": 978,
+        "prompt_tokens_details": {
+          "cached_tokens": 533
+        },
+        "total_tokens": 1124
+      },
+      "output": {
+        "factuality": {
+          "score": 1,
+          "reason": "点评断言与判题结论矛盾，源码问题不是除零错误而是输出语义不符",
+          "evidence": "输出语义与题意不符（疑似笔误/调试残留）",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "relevance": {
+          "score": 1,
+          "reason": "点评未针对本次提交的源码问题，而是错误归类为除零错误",
+          "evidence": "问题唯一且明确，在第 6 行 `System.out.println(a / (b - b));`",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "safety": {
+          "score": 5,
+          "reason": "点评内容安全，无违规信息",
+          "evidence": "ArithmeticException: / by zero at Main.main(Main.java:6)",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "failure_mode": "fact_contradiction"
+      }
+    },
+    {
+      "run": 2,
+      "attempts": 2,
+      "validation": "v3-evidence-punct",
+      "finish": "stop",
+      "usage": {
+        "completion_tokens": 144,
+        "prompt_tokens": 978,
+        "prompt_tokens_details": {
+          "cached_tokens": 977
+        },
+        "total_tokens": 1122
+      },
+      "output": {
+        "factuality": {
+          "score": 1,
+          "reason": "点评断言与判题结论矛盾，源码问题不在除零而在输出语义不符",
+          "evidence": "输出语义与题意不符（疑似笔误/调试残留）",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "relevance": {
+          "score": 1,
+          "reason": "点评未针对实际代码问题，仅给出错误分类",
+          "evidence": "类别标签：运行时错误（RE）· 整数除零 · 输出语义与题意不符（疑似笔误/调试残留）",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "safety": {
+          "score": 5,
+          "reason": "点评内容安全，无违规信息",
+          "evidence": "问题唯一且明确，在第 6 行",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "failure_mode": "fact_contradiction"
+      }
+    }
+  ],
+  "judgeModel": "glm-4.5-flash",
+  "invalidDims": {},
+  "judgementInvalid": false
+}

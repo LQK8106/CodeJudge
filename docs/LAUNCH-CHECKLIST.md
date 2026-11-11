@@ -11,11 +11,19 @@
 | # | 事项 | 状态 | 负责人 | 需要的材料 / 动作 | 验收判据 |
 |---|---|---|---|---|---|
 | A1 | 生产环境凭据重新生成（`.env` 全部密码、`CJ_JWT_SECRET`、`CJ_LLM_API_KEY`、Grafana 口令） | 👤 待办 | **用户**（目标环境） | 目标服务器操作权；按 §五 命令序列执行 `rotate-credentials.py` | preflight **B4 PASS**；`check-hardcoded-defaults.py` FAIL=0/WARN=0 |
-| A2 | Alertmanager 接真实告警通道（当前路由指向 null，**等于没有告警**） | 👤 待办 | **用户** | 二选一：① SMTP：host/port/账号/授权码 + 收件人列表；② 企业微信机器人 webhook URL | preflight **F1 转 PASS** + 真实触发一条测试告警并确认收到 |
+| A2 | Alertmanager 接**生产可达**的告警通道（`null` 现已 fail-closed：`ALERTMANAGER_ENV=prod` 时拒绝启动） | 👤 待办 | **用户** | 二选一：① SMTP：host/port/账号/授权码 + 收件人列表；② webhook 接收端 URL（企业微信/钉钉须先经转换器，不能直填机器人 URL） | **F1 PASS + 实测收到**：`amtool alert add B05Preflight severity=critical` 后——webhook 看接收端记录 + `alertmanager_notifications_total{integration="webhook"}` ≥ 1（§6.1）；email 看 `{integration="email"}` ≥ 1 且**无** `failed_total` 序列（§6.4）。步骤见 `deploy/monitoring/alertmanager/README.md` |
 | A3 | 全站 HTTPS（平台承载账号与用户代码，明文不可接受） | 👤 待办 | **用户** | ① 已备案域名；② TLS 证书（自有证书文件，或目标机可签 Let's Encrypt）；⚠️ 反代须对 judge-ai 的 SSE 配 `proxy_buffering off` | 浏览器无混合内容告警；SSE 点评逐字出现 |
 | A4 | 判题容量决策（吞吐 0.95 题/s **不随实例数增长**，瓶颈=每题 5 容器启停） | ⏸ 待拍板 | **用户** | 二选一：① 接受现容量并按 `实例数 × CJ_MQ_CONSUME_THREADS ≤ CPU 核数` 约束（多实例须跨宿主机）；② 排期「减少每题容器数」优化（单容器全用例 / 容器池预热） | preflight **C2**；`verify-p3.py` A1b 时限 + 抽样全 AC |
 
-> ⚠️ A1 附带：换 `CJ_JWT_SECRET` 会使全部已签发 Token 立即失效，选无人使用的时间窗；本地 `.env` 旧值视为已泄露。
+> ⚠️ A1 附带：换 `CJ_JWT_SECRET` 会使全部已签发 Token 立即失效（单钥模式），选无人使用的时间窗；
+> 若需零掉线，按 `DEPLOYMENT.md` §8.2 的 kid 多钥灰度四步 SOP 执行。本地 `.env` 旧值视为已泄露。
+
+> **A2 可勾选验收（preflight F1 判据，2026-11-11 实测口径）**
+>
+> - [ ] **触发**：`amtool --alertmanager.url=http://localhost:9093 alert add B05Preflight severity=critical summary="channel probe"`（或 `POST /api/v2/alerts`）
+> - [ ] **期望收到**（二选一）：webhook → 接收端日志/收件箱出现该告警（本地：`docker logs codejudge-alert-sink` 含 `B05Preflight`）；email → `alertmanager_notifications_total{integration="email"}` ≥ 1 且无 `failed_total` 增长
+> - [ ] **超时判失败**：触发后 **90s** 内接收端无记录 → 直接判 **FAIL**（Alertmanager UI 里看得到告警 ≠ 通知已发出）
+> - [ ] 收尾：`ALERTMANAGER_ENV=prod` 下重启，确认 receiver 非 `null`（`null` 会 exit 1 拒启）
 
 ---
 
@@ -24,7 +32,7 @@
 | # | 事项 | 状态 | 负责人 | 具体动作 |
 |---|---|---|---|---|
 | D1 | 基础设施容器重建（回环绑定生效） | 🟦 配置就绪 → 👤 执行 | 用户 | `docker-compose up -d`（`BIND_IP` 默认 127.0.0.1，需局域网访问时改 `.env`） |
-| D2 | 网关与 judge-auth **同批重启** | 🟦 已同步契约 → 👤 执行 | 用户 | token `type` 校验两侧版本必须一致，否则合法请求被判 401 |
+| D2 | 网关与 judge-auth **同批重启** | 🟦 已同步契约 + 启动期校验（E-04） → 👤 执行 | 用户 | **先 auth 后 gateway**：网关启动时读 auth 的 `/actuator/info` 比对 `token-claim-contract`，不一致直接拒绝启动（`CJ_TOKEN_CONTRACT_VERSION` 两侧同源）。对端不可达时生产由 `CJ_CONTRACT_CHECK_FAIL_UNREACHABLE=true` 拒绝启动。上线前须做两条反向演练，见 DEPLOYMENT §8.5 |
 | D3 | MinIO 启动（P3 超长代码存储） | 👤 待办 | 用户 | `docker compose --profile storage up -d minio`（受限网络若镜像被拒需先解决拉取） |
 | D4 | RocketMQ broker store 卷持久化 | 🟦 方案明确 → 👤 执行 | 用户 | 先建卷并 `chown 3000:3000`，再挂载 `/home/rocketmq/store`（**不可直接挂命名卷**——镜像内目录不存在 + uid 3000 无写权限，broker 会 ExitCode=253 静默退出，踩坑记录见 docker-compose.yml 注释） |
 | D5 | 接口文档生产关闭 | 🟦 **已完成**（① `CJ_SPRINGDOC_ENABLED` 开关铺满 7 个对外服务；② 2026-09-28 补网关层开关 `CJ_DOC_WHITELIST_ENABLED` —— `.env.example` 生产安全默认 false，开发 `.env` 显式 true） | 用户（生产 `.env` **两项都置 false**：`CJ_SPRINGDOC_ENABLED=false` + `CJ_DOC_WHITELIST_ENABLED=false`） | 两层独立防线：服务端关文档端点 + 网关关匿名放行（网关开关开着时 `/v3/api-docs`、`/doc.html` 匿名可达，等于公开全部 API 结构；置 false 后匿名访问一律 401） |

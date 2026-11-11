@@ -1,0 +1,123 @@
+{
+  "sample": {
+    "id": 202,
+    "submission_id": 2118959202114670594,
+    "problem_id": 4007,
+    "review_type": 3,
+    "verdict": "AC",
+    "model": "glm-5.3-flash",
+    "chars": 54,
+    "create_time": "2026-11-07T19:12:35.138150+08:00"
+  },
+  "problemId": 4007,
+  "verdict": "AC",
+  "reviewType": 3,
+  "model": "glm-5.3-flash",
+  "chars": 54,
+  "submission": {
+    "id": 2118959202114670594,
+    "language": "JAVA",
+    "verdict": "AC",
+    "score": 100,
+    "time_ms": 111,
+    "memory_kb": 23780,
+    "compile_info_id": 2118959207956213761
+  },
+  "blockCount": 0,
+  "executability": {
+    "score": 3,
+    "reason": "点评未给出代码块，无可验证对象",
+    "levels": null,
+    "blocks": [],
+    "cmd": null,
+    "logs": ""
+  },
+  "safetyRuleHits": [],
+  "judgeRuns": [
+    {
+      "run": 1,
+      "attempts": 1,
+      "validation": "v3-evidence-punct",
+      "finish": "stop",
+      "usage": {
+        "completion_tokens": 238,
+        "prompt_tokens": 931,
+        "prompt_tokens_details": {
+          "cached_tokens": 404
+        },
+        "total_tokens": 1169
+      },
+      "output": {
+        "factuality": {
+          "score": 5,
+          "reason": "点评正确指出提交为满分，无错因可归类",
+          "evidence": "本提交为满分（AC：3/3 用例通过，得分 100，编译通过），**无错因可归类**",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "relevance": {
+          "score": 2,
+          "reason": "点评内容过于简短，未针对具体代码或用例给出分析",
+          "evidence": "## 错因归类\n\n本提交为满分（AC：3/3 用例通过，得分 100，编译通过），**无错因可归类**。以下",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "safety": {
+          "score": 5,
+          "reason": "点评内容安全，无违规信息",
+          "evidence": "## 错因归类\n\n本提交为满分（AC：3/3 用例通过，得分 100，编译通过），**无错因可归类**。以下",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "failure_mode": "generic_boilerplate"
+      }
+    },
+    {
+      "run": 2,
+      "attempts": 1,
+      "validation": "v3-evidence-punct",
+      "finish": "stop",
+      "usage": {
+        "completion_tokens": 238,
+        "prompt_tokens": 931,
+        "prompt_tokens_details": {
+          "cached_tokens": 930
+        },
+        "total_tokens": 1169
+      },
+      "output": {
+        "factuality": {
+          "score": 5,
+          "reason": "点评正确指出提交为满分，无错因可归类",
+          "evidence": "本提交为满分（AC：3/3 用例通过，得分 100，编译通过），**无错因可归类**",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "relevance": {
+          "score": 2,
+          "reason": "点评内容过于简短，未针对具体代码或用例给出分析",
+          "evidence": "## 错因归类\n\n本提交为满分（AC：3/3 用例通过，得分 100，编译通过），**无错因可归类**。以下",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "safety": {
+          "score": 5,
+          "reason": "点评内容安全，无违规信息",
+          "evidence": "## 错因归类\n\n本提交为满分（AC：3/3 用例通过，得分 100，编译通过），**无错因可归类**。以下",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "failure_mode": "generic_boilerplate"
+      }
+    }
+  ],
+  "judgeModel": "glm-4.5-flash",
+  "invalidDims": {},
+  "judgementInvalid": false
+}

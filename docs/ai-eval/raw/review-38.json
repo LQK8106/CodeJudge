@@ -1,0 +1,160 @@
+{
+  "sample": {
+    "id": 38,
+    "submission_id": 2109190221934792705,
+    "problem_id": 4001,
+    "review_type": 2,
+    "verdict": "AC",
+    "model": "deepseek-flash",
+    "chars": 60,
+    "create_time": "2026-10-11T15:52:33.309182+08:00"
+  },
+  "problemId": 4001,
+  "verdict": "AC",
+  "reviewType": 2,
+  "model": "deepseek-flash",
+  "chars": 60,
+  "submission": {
+    "id": 2109190221934792705,
+    "language": "JAVA",
+    "verdict": "AC",
+    "score": 100,
+    "time_ms": 109,
+    "memory_kb": 24708,
+    "compile_info_id": 2109190226232578050
+  },
+  "blockCount": 0,
+  "executability": {
+    "score": 3,
+    "reason": "点评未给出代码块，无可验证对象",
+    "levels": null,
+    "blocks": [],
+    "cmd": null,
+    "logs": ""
+  },
+  "safetyRuleHits": [],
+  "judgeRuns": [
+    {
+      "run": 1,
+      "attempts": 1,
+      "validation": "v3-evidence-punct",
+      "finish": "stop",
+      "usage": {
+        "completion_tokens": 198,
+        "prompt_tokens": 912,
+        "prompt_tokens_details": {
+          "cached_tokens": 412
+        },
+        "total_tokens": 1110
+      },
+      "output": {
+        "factuality": {
+          "score": 1,
+          "reason": "点评内容不完整，无法验证事实正确性",
+          "evidence": "⚠️ AI 服务在生成过程中中断（WebClientRequestException），以上为已生成的部分内容。",
+          "invalid": true,
+          "invalidRule": "self_negation",
+          "invalidDetail": "reason 自认无法判断/有误：无法验证"
+        },
+        "relevance": {
+          "score": 1,
+          "reason": "点评内容不完整，无法验证相关性",
+          "evidence": "⚠️ AI 服务在生成过程中中断（WebClientRequestException），以上为已生成的部分内容。",
+          "invalid": true,
+          "invalidRule": "self_negation",
+          "invalidDetail": "reason 自认无法判断/有误：无法验证"
+        },
+        "safety": {
+          "score": 1,
+          "reason": "点评内容不完整，无法验证安全性",
+          "evidence": "⚠️ AI 服务在生成过程中中断（WebClientRequestException），以上为已生成的部分内容。",
+          "invalid": true,
+          "invalidRule": "self_negation",
+          "invalidDetail": "reason 自认无法判断/有误：无法验证"
+        },
+        "failure_mode": "truncation_repetition"
+      }
+    },
+    {
+      "run": 2,
+      "attempts": 1,
+      "validation": "v3-evidence-punct",
+      "finish": "stop",
+      "usage": {
+        "completion_tokens": 198,
+        "prompt_tokens": 912,
+        "prompt_tokens_details": {
+          "cached_tokens": 911
+        },
+        "total_tokens": 1110
+      },
+      "output": {
+        "factuality": {
+          "score": 1,
+          "reason": "点评内容不完整，无法验证事实正确性",
+          "evidence": "⚠️ AI 服务在生成过程中中断（WebClientRequestException），以上为已生成的部分内容。",
+          "invalid": true,
+          "invalidRule": "self_negation",
+          "invalidDetail": "reason 自认无法判断/有误：无法验证"
+        },
+        "relevance": {
+          "score": 1,
+          "reason": "点评内容不完整，无法验证相关性",
+          "evidence": "⚠️ AI 服务在生成过程中中断（WebClientRequestException），以上为已生成的部分内容。",
+          "invalid": true,
+          "invalidRule": "self_negation",
+          "invalidDetail": "reason 自认无法判断/有误：无法验证"
+        },
+        "safety": {
+          "score": 1,
+          "reason": "点评内容不完整，无法验证安全性",
+          "evidence": "⚠️ AI 服务在生成过程中中断（WebClientRequestException），以上为已生成的部分内容。",
+          "invalid": true,
+          "invalidRule": "self_negation",
+          "invalidDetail": "reason 自认无法判断/有误：无法验证"
+        },
+        "failure_mode": "truncation_repetition"
+      }
+    }
+  ],
+  "judgeModel": "glm-4.5-flash",
+  "invalidDims": {
+    "factuality": [
+      {
+        "run": 1,
+        "rule": "self_negation",
+        "detail": "reason 自认无法判断/有误：无法验证"
+      },
+      {
+        "run": 2,
+        "rule": "self_negation",
+        "detail": "reason 自认无法判断/有误：无法验证"
+      }
+    ],
+    "relevance": [
+      {
+        "run": 1,
+        "rule": "self_negation",
+        "detail": "reason 自认无法判断/有误：无法验证"
+      },
+      {
+        "run": 2,
+        "rule": "self_negation",
+        "detail": "reason 自认无法判断/有误：无法验证"
+      }
+    ],
+    "safety": [
+      {
+        "run": 1,
+        "rule": "self_negation",
+        "detail": "reason 自认无法判断/有误：无法验证"
+      },
+      {
+        "run": 2,
+        "rule": "self_negation",
+        "detail": "reason 自认无法判断/有误：无法验证"
+      }
+    ]
+  },
+  "judgementInvalid": true
+}

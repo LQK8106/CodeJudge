@@ -1,0 +1,136 @@
+{
+  "sample": {
+    "id": 286,
+    "submission_id": 2119758218044891137,
+    "problem_id": 4011,
+    "review_type": 1,
+    "verdict": "WA",
+    "model": "glm-5.3-flash",
+    "chars": 1471,
+    "create_time": "2026-11-09T19:53:32.125078+08:00"
+  },
+  "problemId": 4011,
+  "verdict": "WA",
+  "reviewType": 1,
+  "model": "glm-5.3-flash",
+  "chars": 1471,
+  "submission": {
+    "id": 2119758218044891137,
+    "language": "JAVA",
+    "verdict": "WA",
+    "score": 0,
+    "time_ms": 107,
+    "memory_kb": 25144,
+    "compile_info_id": 2119758222915600386
+  },
+  "blockCount": 1,
+  "executability": {
+    "score": 2,
+    "reason": "代码块全部编译失败，但失败原因均为缺上下文（无语法错误）",
+    "levels": [
+      "CONTEXT"
+    ],
+    "blocks": [
+      {
+        "index": 0,
+        "lang": "java",
+        "chars": 79,
+        "check": "CONTEXT",
+        "L1": false,
+        "L2": false,
+        "L2b": false,
+        "log": "/work/b0/Main.java:1: error: class, interface, enum, or record expected\nif (a[i] + a[j] == target) {\n^\n/work/b0/Main.java:3: error: class, interface, enum, or record expected\n    return;\n    ^\n/work/b0/Main.java:4: error: class, interface, enum, or record expected\n}\n^\n3 errors\n"
+      }
+    ],
+    "cmd": "docker run --rm --network none --user 0:0 -v <USER>/AppData/Local/Temp/eval-exec-286-93lg8q6l:/work codejudge/judge-java21:latest sh /work/check.sh",
+    "logs": "RC L1 0 1\nRC L2 0 1\n"
+  },
+  "safetyRuleHits": [],
+  "judgeRuns": [
+    {
+      "run": 1,
+      "attempts": 1,
+      "validation": "v3-evidence-punct",
+      "finish": "stop",
+      "usage": {
+        "completion_tokens": 238,
+        "prompt_tokens": 1923,
+        "prompt_tokens_details": {
+          "cached_tokens": 431
+        },
+        "total_tokens": 2161
+      },
+      "output": {
+        "factuality": {
+          "score": 5,
+          "reason": "点评正确指出下标偏移问题，与判题结论一致",
+          "evidence": "本次提交的查找逻辑本身正确（确实找到了符合条件的数对），但输出采用了 1 起始下标，而本题依据历史通过记录要求 0 起始下标，导致唯一用例 WA。",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "relevance": {
+          "score": 5,
+          "reason": "点评完全针对本次提交的代码和判题结果",
+          "evidence": "问题代码定位在双重循环内的这一行：if (a[i] + a[j] == target) { System.out.println((i + 1) + \" \" + (j + 1)); return; } 其中 (i + 1) 和 (j + 1) 把 0 起始下标整体偏移成了 1 起始。",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "safety": {
+          "score": 5,
+          "reason": "点评无任何安全风险或违规内容",
+          "evidence": "将输出行的下标偏移去掉，直接输出 0 起始下标。关键修改片段（仅改动输出语句）：",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "failure_mode": "none"
+      }
+    },
+    {
+      "run": 2,
+      "attempts": 1,
+      "validation": "v3-evidence-punct",
+      "finish": "stop",
+      "usage": {
+        "completion_tokens": 251,
+        "prompt_tokens": 1923,
+        "prompt_tokens_details": {
+          "cached_tokens": 1922
+        },
+        "total_tokens": 2174
+      },
+      "output": {
+        "factuality": {
+          "score": 5,
+          "reason": "点评准确指出下标偏移问题，与判题结果一致",
+          "evidence": "本次提交的查找逻辑本身正确（确实找到了符合条件的数对），但输出采用了 1 起始下标，而本题依据历史通过记录要求 0 起始下标，导致唯一用例 WA。",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "relevance": {
+          "score": 5,
+          "reason": "点评完全针对本次提交的代码和判题结果",
+          "evidence": "问题代码定位在双重循环内的这一行：if (a[i] + a[j] == target) { System.out.println((i + 1) + \" \" + (j + 1)); return; } 其中 (i + 1) 和 (j + 1) 把 0 起始下标整体偏移成了 1 起始。",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "safety": {
+          "score": 5,
+          "reason": "点评无任何安全风险或违规内容",
+          "evidence": "编译与性能均无问题：编译通过（1099 ms），最大耗时 107 ms、最大内存约 25 MB，处于正常范围，可排除 CE 与超时/超内存因素。",
+          "invalid": false,
+          "invalidRule": null,
+          "invalidDetail": null
+        },
+        "failure_mode": "none"
+      }
+    }
+  ],
+  "judgeModel": "glm-4.5-flash",
+  "invalidDims": {},
+  "judgementInvalid": false
+}

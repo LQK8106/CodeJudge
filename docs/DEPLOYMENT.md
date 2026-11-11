@@ -192,9 +192,14 @@ docker images | grep codejudge/
    对策：worker 与沙箱统一走 VM 侧同路径 `/cj-sandbox`
    （compose: `CJ_WORKER_WORK_ROOT=/cj-sandbox`、`CJ_SANDBOX_SECCOMP=/cj-sandbox/judge-seccomp.json`，
    worker bind 挂载 `/cj-sandbox:/cj-sandbox`）。
-2. **属主初始化**：一次性 `sandbox-work-init` 容器（root）建 `/cj-sandbox/artifacts`、
-   拷贝 seccomp profile、`chown -R 1001:1001` —— 容器化形态下 bind 挂载走**真实 Linux 权限**，
-   worker(uid 1001) 必须对 artifactDir 有写权（Windows 宿主挂载的 777 时代不再适用）。
+2. **属主初始化**：`/cj-sandbox` 在 daemon 重启后会被重建为 `root:root 0755`，
+   而 worker(uid 1001) 必须对它有写权（容器化形态下 bind 挂载走**真实 Linux 权限**，
+   Windows 宿主挂载的 777 时代不再适用）。两层保障：
+   - 首次 `up`：一次性 `sandbox-work-init` 容器（root）建 `/cj-sandbox/artifacts`、
+     拷贝 seccomp profile、`chown -R judge:judge`；
+   - daemon 重启：`sandbox-work-init` 不随 daemon 自启，故 **judge-worker 入口脚本**
+     （`judge-worker/docker-entrypoint.sh`，以 root 启动→修复属主→`setpriv` 降回 uid 1001）
+     在每次容器启动时幂等自愈，避免「重启后判题全部 SE → 重试耗尽转 DEAD」。
    因此 `DockerSandbox` 派发沙箱固定 `--user 1001:1001`（与 worker 进程 uid 一致；
    曾用 1000:1000 → 编译沙箱 `cannot create /work/stdout: Permission denied`，实测踩坑）。
 3. **docker.sock 访问**：VM 内 sock 为 `root:root 0660`，worker（uid 1001, gid 999 judge）
@@ -271,7 +276,7 @@ docker-compose --env-file ../../.env -f docker-compose.monitoring.yml up -d
 | 路由 id | 前缀 | 目标 | 特殊配置 |
 |---|---|---|---|
 | `login-rate-limit` | `POST /accounts/login` | 9081 | 令牌桶 2 req/s，突发 5（`GW_LOGIN_RATE_REPLENISH` / `GW_LOGIN_RATE_BURST` 可覆盖） |
-| `judge-auth` | `/accounts/**` `/menus/**` `/roles/**` `/privileges/**` `/jwks/**` | 9081 | |
+| `judge-auth` | `/accounts/**` `/menus/**` `/roles/**` `/privileges/**` | 9081 | （`/jwks/**` 已随 2026-09-25 加固删除，不再有该路由） |
 | `judge-user` | `/users/**` `/students/**` `/teachers/**` `/staffs/**` | 9082 | |
 | `judge-problem` | `/problems/**` `/tags/**` `/test-cases/**` | 9083 | |
 | `judge-submission` | `/submissions/**` `/workers/**` | 9084 | |
@@ -502,10 +507,14 @@ export CJ_P3_ADMIN_PASS=<密码>
 
 ### 7.3 通知与容量
 
-- [ ] ⚙ Alertmanager 接入真实通知渠道（**当前未通过**）｜ 校验：自动 F1
-      —— 当前默认/critical 路由都指向 `null` receiver，**告警不会发到任何地方**。
-      机制已就绪（改 `ALERTMANAGER_*` 环境变量即可，无需改配置模板），
-      见 `deploy/monitoring/alertmanager/README.md`
+- [ ] ⚙ Alertmanager 接入**生产可达**的通知渠道 ｜ 校验：自动 F1 + 手工 F1 演练
+      —— 机制已落地并实测：`RECEIVER=webhook` 时投递到 compose 内 `alert-sink`
+      （`docker logs codejudge-alert-sink` 可见原始 JSON + `{integration="webhook"}` 计数）；
+      `RECEIVER=email` 时 SMTP 投递成功（`{integration="email"}` 计数 1、无 `failed_total`）；
+      `ALERTMANAGER_ENV=prod` 下 receiver 仍为 `null` 会**拒绝启动**（entrypoint 自检，fail-closed）。
+      生产只需把 `ALERTMANAGER_WEBHOOK_URL` 换成真实接收端（机器人需先过转换器）或改用 `email`。
+      演练步骤见 `deploy/monitoring/alertmanager/README.md` §6.1（webhook）/ §6.4（email：
+      `alertmanager_notifications_total{integration="email"}` ≥ 1 且无 `failed_total` 序列）
 - [ ] ✋ `judge-worker` 起多实例（9085/9185/9285）并确认 MQ 消费组分流正常
       ｜ 校验：自动 C2（当前 1 个实例）
       ⚠️ **不要照搬旧结论「加实例即线性扩容」** —— 2026-09-22 实测**推翻**：
@@ -585,19 +594,53 @@ server {
 - ⚠️ 终止 TLS 后，网关看到的都是 HTTP。`X-Forwarded-Proto` 已由反代设置，
   前端 cookie 的 `Secure` 属性判定见 `CookieBuilder`（2026-09-25 第八轮已修静默丢弃问题）。
 
-### 8.2 JWT 密钥轮换（E4）
+### 8.2 JWT 密钥轮换（E4 / E-01 多钥灰度）
 
-现状：单密钥 HMAC（`CJ_JWT_SECRET`），**不支持多密钥灰度**。轮换步骤（当前形态）：
+现状：HMAC 对称签名，**支持 `kid` 多钥灰度**：
 
-1. 选低峰窗口。**换密钥后所有已签发 token 立即失效**（包括 refresh token），全员需重新登录。
-2. 改 `.env` 的 `CJ_JWT_SECRET`（≥32 字节随机值）。
-3. 重启 `judge-auth` 与 `judge-gateway`（两者共享该密钥，**必须同一窗口内一起换**，
-   只换一个 = 全站 401）。
-4. 复验：`python scripts/verify-p1-login.py`（登录链路 43 项断言）。
+- `judge-auth` 签发只用 `active=true` 的那把，token header 写 `kid`；
+- `judge-gateway` 验签**遍历全部密钥**（active 优先），**无 `kid` 的历史 token** 同样命中；
+- 只配 `CJ_JWT_SECRET`（不配 `keys`）时退化为单钥模式，启动打 `[jwt-keys] 单钥模式` WARN，
+  行为与改造前一致 —— 该模式换钥仍需两侧同窗口 + 全员重登。
 
-多密钥（kid）灰度轮换属**行为变更**，涉及 `JwtTool` 签发/验签双钥窗口 + 网关 kid 感知，
-建议与「refresh token 轮换/吊销（Redis jti）」「RS256 化」合并立项（见 LAUNCH-READINESS §G 遗留项）。
-**当前防线**：`/jwks` 端点已删除（密钥不再外泄），密钥仅经 `.env` 流转、不入 git、不进命令行。
+配置形态（两侧完全一致，env 注入，密钥不进 yml）：
+
+```bash
+CJ_JWT_SECRET=<旧钥>                     # 单钥兼容项；配置 keys 后可不设
+CJ_JWT_KEYS_0_KID=k-2026a
+CJ_JWT_KEYS_0_SECRET=<旧钥>              # 双钥窗口内 = 当前 CJ_JWT_SECRET
+CJ_JWT_KEYS_0_ACTIVE=true                # 第 1 步 true，第 2 步改 false
+CJ_JWT_KEYS_1_KID=k-2026b
+CJ_JWT_KEYS_1_SECRET=<新钥，≥32 字节>
+CJ_JWT_KEYS_1_ACTIVE=false               # 第 2 步改 true
+```
+
+#### 四步灰度 SOP
+
+| 步 | 做什么 | 观察什么 | 才进下一步的条件 | 失败怎么退 |
+|---|---|---|---|---|
+| 1 双钥并存 | **先网关、后 auth** 加 `KEYS_1`（`ACTIVE=false`）。同批重启两侧 | 两侧日志 `[jwt-keys] 多钥模式：active=k-2026a 参与验签=[k-2026a, k-2026b]`；登录 200；旧 token 200 | 两侧都是多钥模式且登录/旧 token 均 200 | 删 `KEYS_1_*` 重启（等价旧状态，无副作用） |
+| 2 切 active | auth 置 `KEYS_0_ACTIVE=false`、`KEYS_1_ACTIVE=true`（网关可不动，验签集合不变；建议同批） | 新登录 token header `kid=k-2026b`；旧 token（无 kid / kid=k-2026a）仍 200 | 新旧 token **同时** 200，refresh 续签 200 | 把 active 翻回 `k-2026a` 重启 auth（新钥 token 立即失效，需重登） |
+| 3 观察期 | 什么都不做：access 30 分钟自然过期，refresh 30 天 | 网关 401 无异常抬升；`kid=k-2026a` 的流量随时间归零 | 旧 access 全部过期（refresh 可继续容忍或强制重登） | — |
+| 4 撤旧钥 | **先 auth、后网关** 删 `KEYS_0_*` | 旧 token（无 kid / k-2026a）→ **401**；`kid=k-2026b` token → **200** | 旧 token 401 属**预期**，不是故障 | 需要回滚则把 `KEYS_0_*` 加回并重启（旧 token 若未过期则恢复可用） |
+
+复验命令（`$GW`、`$TOLD`、`$TNEW` 为网关地址与两枚 token）：
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" -H "Authorization: Bearer $TOLD" $GW/accounts/me/capabilities  # 1/2/3 步 200，第 4 步 401
+curl -s -o /dev/null -w "%{http_code}\n" -H "Authorization: Bearer $TNEW" $GW/accounts/me/capabilities  # 始终 200
+python - <<'PY'
+import base64, json, os
+for k in ("TOLD", "TNEW"):
+    tok = os.environ.get(k)
+    if tok:
+        print(k, json.loads(base64.urlsafe_b64decode(tok.split(".")[0] + "==")))
+PY
+```
+
+> 关键约束：新增密钥必须**先发网关**（验签方先认识新钥），再发 auth（签发方才开始用新钥）。
+> 顺序反了 = 新钥签的 token 网关验不过 = 大面积 401。
+
 
 ### 8.3 API 版本化（E3）—— ✅ 已落地（2026-10-01）
 
@@ -673,3 +716,77 @@ mirror.gcr.io 拒连不可用）+ ZAP baseline（ghcr.io/zaproxy/zaproxy:stable�
 1800s），离线扫描挂 `~/.m2:ro` + `--offline-scan`；③ trivy DB 的 fixed 版本可能超前于
 Central 实际发布（10.1.58 被官方跳过、10.1.59 才是实际修复版），钉版前必须查 Central
 metadata + `mvn` 实测。
+
+### 8.5 发布顺序校验：token claim 契约（E-04）
+
+**问题**：网关按 `JwtUtils` 里的 `claims.get("type") == "access"` 鉴权，该 claim 由 judge-auth
+签发。两侧若不同步（键名、取值、是否必填任一变化），**网关不会报错，只会把合法请求判 401** ——
+症状出现在用户侧，发布窗口内的服务端日志完全干净。这类"顺序错误"无法靠发布后检查发现。
+
+**机制**：两侧在同一份 `application.yml` 里声明契约版本，网关启动时主动比对。
+
+```yaml
+# judge-auth 与 judge-gateway 各自的 application.yml
+info:
+  app:
+    token-claim-contract: ${CJ_TOKEN_CONTRACT_VERSION:v1}
+```
+
+```yaml
+# judge-gateway：启动期读取 auth 的 /actuator/info 并校验
+cj:
+  security:
+    contract-check:
+      enabled: ${CJ_CONTRACT_CHECK_ENABLED:true}
+      auth-base-url: ${GW_AUTH_URI:http://localhost:9081}
+      expected: ${CJ_TOKEN_CONTRACT_VERSION:v1}
+      fail-on-unreachable: ${CJ_CONTRACT_CHECK_FAIL_UNREACHABLE:true}
+```
+
+实现见 `judge-gateway/.../contract/TokenContractCheckRunner.java`（`ApplicationRunner`，
+WebClient 读 `http://<auth>/actuator/info`，默认 5 次尝试 × 1s 间隔、单次 1.5s 超时）。
+
+> 与 `ActuatorGuardFilter` 无关：本校验是网关**主动外呼** auth 的 `/actuator/info`，
+> 不经过网关自身的入站过滤器（后者只拦进入网关 `/actuator/**` 的请求）。
+> auth 侧需 `management.info.env.enabled=true` 才会输出 `info.*`，两侧 yml 均已配置。
+
+| 场景 | 行为 |
+|---|---|
+| 两侧版本一致 | 启动，日志 `[contract-check] 通过：本地=v1 对端=v1 url=...` |
+| **版本不一致** | **拒绝启动**（非 0 退出），日志打出 本地版本 / 对端版本 / 对端地址 / 处理建议。不受 `fail-on-unreachable` 影响 |
+| 对端不可达 / 未声明版本 | `fail-on-unreachable=true`（生产）→ 拒绝启动；`false`（本地）→ WARN 放行 |
+
+**发布顺序（强制）**：先发 `judge-auth` → 确认 `curl :9081/actuator/info` 返回新版本 →
+再发 `judge-gateway`。网关先发会因为读到旧版本而启动失败 —— 这是**预期结果**，不是故障。
+
+**何时递增版本**：JWT `type` claim 的键名、允许取值（`access`/`refresh`）、必填性任一变化。
+递增时 `CJ_TOKEN_CONTRACT_VERSION` 两侧同时改（同一窗口），不允许只改一侧。
+
+**上线验收（两条反向演练，缺一不可）**：
+
+```bash
+# ① 旧 auth + 新 gateway：auth 声明 v0，gateway 期望 v1 → 网关必须起不来
+docker compose run --rm -e CJ_TOKEN_CONTRACT_VERSION=v0 judge-auth   # 或临时改 .env 后仅重启 auth
+docker compose up -d judge-gateway && docker logs judge-gateway | tail -20
+# 期望：ERROR [contract-check] 拒绝启动：token claim 契约版本不一致（本地=v1 对端=v0），退出码非 0
+
+# ② 新 auth + 旧 gateway：auth 声明 v1，gateway 期望 v0 → 网关必须起不来
+docker compose run --rm -e CJ_TOKEN_CONTRACT_VERSION=v0 judge-gateway
+# 期望：同上，本地=v0 对端=v1
+
+# ③ 恢复两侧 v1 后回归
+docker compose up -d judge-auth judge-gateway && curl -s :9080/actuator/info
+```
+
+`CJ_CONTRACT_CHECK_ENABLED=false` 仅用于本地离线开发；生产关闭等于回到"顺序错误由用户发现"的旧状态。
+
+编排侧表现：校验失败时进程以非 0 退出 —— compose（`restart: always`）会重启循环、日志反复出现；
+K8s 为 CrashLoopBackOff。两者都不会把流量转给该实例，这正是期望的"新版本起不来"而非"起来了但全站 401"。
+
+**生产默认值**：`CJ_CONTRACT_CHECK_ENABLED=true`、`CJ_CONTRACT_CHECK_FAIL_UNREACHABLE=true`、
+`CJ_TOKEN_CONTRACT_VERSION=v1`（auth / gateway 读同一变量，必须同值）。
+
+**回滚**：`docker compose up -d --force-recreate judge-gateway`（镜像 tag 回退到上一版即可）；
+若网关回退到旧版本而 auth 已是新版本，旧网关不认新版本号 → 同样拒启，此时应**同时回退 auth**，
+不要用 `CJ_CONTRACT_CHECK_ENABLED=false` 绕过（生产禁止关闭，等价于回到顺序错误由用户发现的旧状态）。
+

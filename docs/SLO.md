@@ -10,7 +10,7 @@
 |---|---|---|---|---|
 | S1 | 平台可用性（网关 5xx 比率 + 健康检查失败） | **99.9%**（月度） | Prometheus `http_server_requests{uri!~"/actuator.*"}` 5xx 计数 / 总计数 | 43.2 分钟 |
 | S2 | 提交受理 P99 | **< 200ms**（不含判题） | `http_server_requests{uri="/submissions",method="POST"}` 直方图 P99 | 每月违规次数 ≤ 3 次×5min 窗口 |
-| S3 | 判题端到端 P99 | **< 10s**（提交成功 → 终态 verdict 落库） | submission→result 时间差（`judge_task.create_time` vs `judge_result` 写入），由指标 `cj_judge_e2e_seconds` 暴露 | 同上 |
+| S3 | 判题端到端 P99 | **< 10s**（提交成功 → 终态 verdict 落库） | 指标 `cj_judge_e2e_seconds`（`JudgeE2eMetrics`，worker 终态落库时埋点）：起点 `judge_submission.submit_time`，终点为 verdict 落库时刻；**分母含全部终态 AC/WA/TLE/MLE/RE/CE/SE**——CE 没有 `judge_result` 行也计入（业务终态由 `finishTerminal` 统一记），SE 由死信分支记；CAS 丢弃（任务被接管/重判）不是终态，不计 | 同上 |
 | S4 | 判题正确率（非 SE 终态占比） | **≥ 99.5%**（SE = 判题机自身故障） | verdict 分布（SE 计数 / 总终态） | 违规即触发 P1 级复盘 |
 | S5 | SSE/WebSocket 连接建立成功率 | **≥ 99.9%** | 网关 ws/sse 路由握手失败计数 | 43.2 分钟 |
 | S6 | 数据持久性（提交记录/判题结果） | **零丢失**（RPO ≤ 5min） | 备份校验 + binlog/checkpoint 检查 | 违规 = 事故 |

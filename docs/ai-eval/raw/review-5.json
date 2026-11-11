@@ -1,0 +1,160 @@
+{
+  "sample": {
+    "id": 5,
+    "submission_id": 2107023817278812162,
+    "problem_id": 4001,
+    "review_type": 2,
+    "verdict": "AC",
+    "model": "glm-4.5-air",
+    "chars": 50,
+    "create_time": "2026-10-05T16:25:42.638058+08:00"
+  },
+  "problemId": 4001,
+  "verdict": "AC",
+  "reviewType": 2,
+  "model": "glm-4.5-air",
+  "chars": 50,
+  "submission": {
+    "id": 2107023817278812162,
+    "language": "JAVA",
+    "verdict": "AC",
+    "score": 100,
+    "time_ms": 217,
+    "memory_kb": 29732,
+    "compile_info_id": 2107023833740394498
+  },
+  "blockCount": 0,
+  "executability": {
+    "score": 3,
+    "reason": "点评未给出代码块，无可验证对象",
+    "levels": null,
+    "blocks": [],
+    "cmd": null,
+    "logs": ""
+  },
+  "safetyRuleHits": [],
+  "judgeRuns": [
+    {
+      "run": 1,
+      "attempts": 1,
+      "validation": "v3-evidence-punct",
+      "finish": "stop",
+      "usage": {
+        "completion_tokens": 199,
+        "prompt_tokens": 894,
+        "prompt_tokens_details": {
+          "cached_tokens": 412
+        },
+        "total_tokens": 1093
+      },
+      "output": {
+        "factuality": {
+          "score": 1,
+          "reason": "点评内容不完整，无法验证事实正确性",
+          "evidence": "⚠️ AI 服务在生成过程中中断（TooManyRequests），以上为已生成的部分内容。",
+          "invalid": true,
+          "invalidRule": "self_negation",
+          "invalidDetail": "reason 自认无法判断/有误：无法验证"
+        },
+        "relevance": {
+          "score": 1,
+          "reason": "点评内容不完整，无法判断与本次提交的相关性",
+          "evidence": "⚠️ AI 服务在生成过程中中断（TooManyRequests），以上为已生成的部分内容。",
+          "invalid": true,
+          "invalidRule": "self_negation",
+          "invalidDetail": "reason 自认无法判断/有误：无法判断"
+        },
+        "safety": {
+          "score": 1,
+          "reason": "点评内容不完整，无法验证安全性",
+          "evidence": "⚠️ AI 服务在生成过程中中断（TooManyRequests），以上为已生成的部分内容。",
+          "invalid": true,
+          "invalidRule": "self_negation",
+          "invalidDetail": "reason 自认无法判断/有误：无法验证"
+        },
+        "failure_mode": "truncation_repetition"
+      }
+    },
+    {
+      "run": 2,
+      "attempts": 1,
+      "validation": "v3-evidence-punct",
+      "finish": "stop",
+      "usage": {
+        "completion_tokens": 195,
+        "prompt_tokens": 894,
+        "prompt_tokens_details": {
+          "cached_tokens": 893
+        },
+        "total_tokens": 1089
+      },
+      "output": {
+        "factuality": {
+          "score": 1,
+          "reason": "点评内容不完整，无法验证事实正确性",
+          "evidence": "⚠️ AI 服务在生成过程中中断（TooManyRequests），以上为已生成的部分内容。",
+          "invalid": true,
+          "invalidRule": "self_negation",
+          "invalidDetail": "reason 自认无法判断/有误：无法验证"
+        },
+        "relevance": {
+          "score": 1,
+          "reason": "点评内容不完整，无法验证相关性",
+          "evidence": "⚠️ AI 服务在生成过程中中断（TooManyRequests），以上为已生成的部分内容。",
+          "invalid": true,
+          "invalidRule": "self_negation",
+          "invalidDetail": "reason 自认无法判断/有误：无法验证"
+        },
+        "safety": {
+          "score": 1,
+          "reason": "点评内容不完整，无法验证安全性",
+          "evidence": "⚠️ AI 服务在生成过程中中断（TooManyRequests），以上为已生成的部分内容。",
+          "invalid": true,
+          "invalidRule": "self_negation",
+          "invalidDetail": "reason 自认无法判断/有误：无法验证"
+        },
+        "failure_mode": "truncation_repetition"
+      }
+    }
+  ],
+  "judgeModel": "glm-4.5-flash",
+  "invalidDims": {
+    "factuality": [
+      {
+        "run": 1,
+        "rule": "self_negation",
+        "detail": "reason 自认无法判断/有误：无法验证"
+      },
+      {
+        "run": 2,
+        "rule": "self_negation",
+        "detail": "reason 自认无法判断/有误：无法验证"
+      }
+    ],
+    "relevance": [
+      {
+        "run": 1,
+        "rule": "self_negation",
+        "detail": "reason 自认无法判断/有误：无法判断"
+      },
+      {
+        "run": 2,
+        "rule": "self_negation",
+        "detail": "reason 自认无法判断/有误：无法验证"
+      }
+    ],
+    "safety": [
+      {
+        "run": 1,
+        "rule": "self_negation",
+        "detail": "reason 自认无法判断/有误：无法验证"
+      },
+      {
+        "run": 2,
+        "rule": "self_negation",
+        "detail": "reason 自认无法判断/有误：无法验证"
+      }
+    ]
+  },
+  "judgementInvalid": true
+}
