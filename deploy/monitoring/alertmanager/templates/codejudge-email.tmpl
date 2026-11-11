@@ -1,0 +1,267 @@
+{{- /*
+  CodeJudge 告警邮件模板（全中文）
+  =====================================================================
+  用途：Alertmanager email receiver 的 Subject / HTML / 纯文本三部分。
+  引用方式（见 alertmanager.yml.tpl）：
+      Subject: '{{ template "cj.email.subject" . }}'
+      html:    '{{ template "cj.email.html" . }}'
+      text:    '{{ template "cj.email.text" . }}'
+
+  设计约束（改模板前务必先读）：
+    1) v0.27.0 的模板函数只有 toUpper/toLower/title/trimSpace/join/match/
+       safeHtml/reReplaceAll/stringSlice —— **没有 date / tz / since / now**。
+       时间只能用 Go 方法：{{ .StartsAt.Format "2006-01-02 15:04:05" }}。
+       StartsAt 由 Prometheus 以 UTC 传入，故正文明确标注 UTC，避免误读。
+    2) 本文件会同时被 text/template 与 html/template 解析：
+       HTML 定义里的值会被 html/template 自动转义，所以 description 中的换行
+       用 CSS 的 white-space: pre-wrap 呈现，**不要**用 reReplaceAll 拼 <br/>
+       （那样会被转义成 &lt;br/&gt;，除非套 safeHtml，反而丢掉转义保护）。
+    3) 样式全部内联、布局用 table：邮件客户端（QQ 邮箱 / 企业邮箱 / Outlook）
+       普遍剥离 <style> 与 class，仅靠外链样式会退化成无格式的大段文字。
+    4) 中文名映射集中在 cj.zh.* 定义里：告警规则名、级别、状态、服务名都翻成
+       中文；括号内保留原始标识，便于值班按名字回查规则文件。
+  =====================================================================
+*/ -}}
+
+{{- /* ---------------- 中文文案映射 ---------------- */ -}}
+
+{{- define "cj.zh.status" -}}
+{{- if eq . "firing" -}}触发中
+{{- else if eq . "resolved" -}}已恢复
+{{- else -}}未知状态
+{{- end -}}
+{{- end -}}
+
+{{- define "cj.zh.severity" -}}
+{{- if eq . "critical" -}}紧急
+{{- else if eq . "warning" -}}警告
+{{- else if eq . "info" -}}提示
+{{- else -}}一般
+{{- end -}}
+{{- end -}}
+
+{{- define "cj.zh.alertname" -}}
+{{- if eq . "CodeJudgeServiceDown" -}}服务无响应
+{{- else if eq . "CodeJudgeMetricsMissing" -}}监控数据采集中断
+{{- else if eq . "CodeJudgeHighErrorRate" -}}接口错误率过高
+{{- else if eq . "CodeJudgeHighLatencyP95" -}}接口响应变慢
+{{- else if eq . "CodeJudgeSubmitFailureBurst" -}}提交接口失败激增
+{{- else if eq . "JudgeQueueBacklogHigh" -}}判题队列积压
+{{- else if eq . "JudgeDeadTasksPresent" -}}判题死信任务
+{{- else if eq . "JudgeWorkersAllOffline" -}}判题机全部离线
+{{- else if eq . "JudgeE2ELatencyP99Breach" -}}判题端到端耗时超标
+{{- else if eq . "JvmHeapHigh" -}}JVM 堆内存占用过高
+{{- else if eq . "HikariPoolSaturation" -}}数据库连接池获取变慢
+{{- else if eq . "ProcessCpuSustainedHigh" -}}进程 CPU 占用持续过高
+{{- else -}}{{ . }}
+{{- end -}}
+{{- end -}}
+
+{{- define "cj.zh.application" -}}
+{{- if eq . "judge-gateway" -}}网关服务（judge-gateway）
+{{- else if eq . "judge-auth" -}}认证服务（judge-auth）
+{{- else if eq . "judge-user" -}}用户服务（judge-user）
+{{- else if eq . "judge-problem" -}}题目服务（judge-problem）
+{{- else if eq . "judge-submission" -}}提交服务（judge-submission）
+{{- else if eq . "judge-worker" -}}判题机（judge-worker）
+{{- else if eq . "judge-contest" -}}竞赛服务（judge-contest）
+{{- else if eq . "judge-ai" -}}AI 点评服务（judge-ai）
+{{- else if eq . "prometheus" -}}监控服务（prometheus）
+{{- else -}}{{ . }}
+{{- end -}}
+{{- end -}}
+
+{{- define "cj.zh.receiver" -}}
+{{- if eq . "email" -}}邮件
+{{- else if eq . "wecom" -}}企业微信
+{{- else if eq . "webhook" -}}Webhook
+{{- else if eq . "null" -}}仅界面（不外发）
+{{- else -}}{{ . }}
+{{- end -}}
+{{- end -}}
+
+{{- /* ---------------- 邮件主题（纯文本模板） ---------------- */ -}}
+{{- define "cj.email.subject" -}}
+【CodeJudge 告警】{{ template "cj.zh.status" .Status }}｜{{ template "cj.zh.severity" .CommonLabels.severity }}｜{{ template "cj.zh.alertname" .CommonLabels.alertname }}{{ if .CommonLabels.application }} @ {{ template "cj.zh.application" .CommonLabels.application }}{{ end }}｜共 {{ len .Alerts }} 条
+{{- end -}}
+
+{{- /* ---------------- 纯文本正文 ---------------- */ -}}
+{{- define "cj.email.text" -}}
+CodeJudge 判题平台 · 监控告警
+==================================================
+
+状态：{{ template "cj.zh.status" .Status }}
+级别：{{ template "cj.zh.severity" .CommonLabels.severity }}
+服务：{{ template "cj.zh.application" .CommonLabels.application }}
+告警数量：{{ len .Alerts }} 条
+接收通道：{{ template "cj.zh.receiver" .Receiver }}
+
+{{- range $i, $a := .Alerts }}
+--------------------------------------------------
+[{{ $i }}] {{ template "cj.zh.alertname" $a.Labels.alertname }}（{{ template "cj.zh.status" $a.Status }}）
+实例：{{ $a.Labels.instance }}
+触发时间：{{ $a.StartsAt.Format "2006-01-02 15:04:05" }} UTC
+摘要：{{ $a.Annotations.summary }}
+
+详情：
+{{ $a.Annotations.description }}
+{{- if $a.GeneratorURL }}
+规则图表：{{ $a.GeneratorURL }}
+{{- end }}
+{{- end }}
+
+--------------------------------------------------
+告警中心：{{ .ExternalURL }}
+本邮件由监控系统自动发送，请勿直接回复。
+{{- end -}}
+
+{{- /* ---------------- HTML 正文 ---------------- */ -}}
+{{- define "cj.email.html" -}}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeJudge 判题平台监控告警</title>
+</head>
+<body style="margin:0;padding:0;background-color:#eef2f7;">
+<!-- 收件箱预览文案 -->
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">
+  {{ template "cj.zh.status" .Status }}｜{{ template "cj.zh.severity" .CommonLabels.severity }}｜{{ template "cj.zh.alertname" .CommonLabels.alertname }}｜共 {{ len .Alerts }} 条
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#eef2f7;">
+  <tr>
+    <td align="center" style="padding:24px 12px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:680px;background-color:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e3e8ef;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei','PingFang SC',Arial,sans-serif;">
+
+        <!-- 页头 -->
+        <tr>
+          <td style="background-color:#0f172a;padding:22px 24px;">
+            <div style="font-size:12px;letter-spacing:2px;color:#94a3b8;">CODEJUDGE · 监控告警</div>
+            <div style="font-size:22px;line-height:1.4;color:#ffffff;font-weight:700;margin-top:8px;">判题平台运行预警</div>
+            <div style="font-size:13px;color:#cbd5e1;margin-top:6px;">本邮件由监控系统自动汇总，请按下方排查建议处理</div>
+          </td>
+        </tr>
+
+        <!-- 状态横幅 -->
+        {{- if eq .Status "resolved" }}
+        <tr>
+          <td style="background-color:#e8f5e9;border-left:5px solid #2e7d32;padding:14px 24px;">
+            <div style="font-size:16px;font-weight:700;color:#1b5e20;">✓ 告警已恢复</div>
+            <div style="font-size:13px;color:#2e7d32;margin-top:4px;">触发中的问题已解除，以下为恢复记录。</div>
+          </td>
+        </tr>
+        {{- else }}
+        <tr>
+          <td style="background-color:#fdecea;border-left:5px solid #d93025;padding:14px 24px;">
+            <div style="font-size:16px;font-weight:700;color:#b3261e;">⚠ 告警触发中</div>
+            <div style="font-size:13px;color:#c5221f;margin-top:4px;">系统检测到异常，请尽快按下方建议排查。</div>
+          </td>
+        </tr>
+        {{- end }}
+
+        <!-- 概览 -->
+        <tr>
+          <td style="padding:18px 24px 6px 24px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f8fafc;border:1px solid #e3e8ef;border-radius:10px;">
+              <tr>
+                <td style="padding:14px 16px;font-size:13px;color:#64748b;width:92px;">服务</td>
+                <td style="padding:14px 16px;font-size:14px;color:#0f172a;font-weight:600;">{{ template "cj.zh.application" .CommonLabels.application }}</td>
+              </tr>
+              <tr>
+                <td style="padding:14px 16px;font-size:13px;color:#64748b;border-top:1px solid #e3e8ef;">告警级别</td>
+                <td style="padding:14px 16px;font-size:14px;color:#0f172a;font-weight:600;border-top:1px solid #e3e8ef;">
+                  {{ template "cj.zh.severity" .CommonLabels.severity }}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:14px 16px;font-size:13px;color:#64748b;border-top:1px solid #e3e8ef;">告警数量</td>
+                <td style="padding:14px 16px;font-size:14px;color:#0f172a;font-weight:600;border-top:1px solid #e3e8ef;">{{ len .Alerts }} 条</td>
+              </tr>
+              <tr>
+                <td style="padding:14px 16px;font-size:13px;color:#64748b;border-top:1px solid #e3e8ef;">接收通道</td>
+                <td style="padding:14px 16px;font-size:14px;color:#0f172a;border-top:1px solid #e3e8ef;">{{ template "cj.zh.receiver" .Receiver }}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- 逐条明细 -->
+        <tr>
+          <td style="padding:10px 24px 0 24px;">
+            <div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#64748b;padding:8px 0;">告警明细</div>
+            {{- range $i, $a := .Alerts }}
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e3e8ef;border-radius:10px;margin-bottom:12px;">
+              <tr>
+                <td style="padding:16px 18px 6px 18px;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="font-size:15px;font-weight:700;color:#0f172a;">
+                        {{ template "cj.zh.alertname" $a.Labels.alertname }}<span style="font-size:12px;font-weight:400;color:#94a3b8;">（{{ $a.Labels.alertname }}）</span>
+                      </td>
+                      <td align="right" style="white-space:nowrap;">
+                        {{- if eq $a.Labels.severity "critical" }}
+                        <span style="display:inline-block;font-size:12px;font-weight:700;color:#ffffff;background-color:#d93025;border-radius:10px;padding:3px 10px;">紧急</span>
+                        {{- else if eq $a.Labels.severity "warning" }}
+                        <span style="display:inline-block;font-size:12px;font-weight:700;color:#ffffff;background-color:#f59e0b;border-radius:10px;padding:3px 10px;">警告</span>
+                        {{- else }}
+                        <span style="display:inline-block;font-size:12px;font-weight:700;color:#ffffff;background-color:#64748b;border-radius:10px;padding:3px 10px;">提示</span>
+                        {{- end }}
+                        {{- if eq $a.Status "resolved" }}
+                        <span style="display:inline-block;font-size:12px;font-weight:700;color:#ffffff;background-color:#2e7d32;border-radius:10px;padding:3px 10px;margin-left:4px;">已恢复</span>
+                        {{- else }}
+                        <span style="display:inline-block;font-size:12px;font-weight:700;color:#ffffff;background-color:#475569;border-radius:10px;padding:3px 10px;margin-left:4px;">触发中</span>
+                        {{- end }}
+                      </td>
+                    </tr>
+                  </table>
+                  <div style="font-size:12px;color:#94a3b8;margin-top:8px;">
+                    实例：{{ $a.Labels.instance }}　|　触发时间：{{ $a.StartsAt.Format "2006-01-02 15:04:05" }} UTC
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:8px 18px 0 18px;">
+                  <div style="font-size:14px;font-weight:600;color:#1f2937;line-height:1.6;">{{ $a.Annotations.summary }}</div>
+                </td>
+              </tr>
+              {{- with $a.Annotations.description }}
+              <tr>
+                <td style="padding:10px 18px 0 18px;">
+                  <div style="font-size:13px;line-height:1.75;color:#374151;background-color:#f8fafc;border-radius:8px;padding:12px 14px;white-space:pre-wrap;">{{ . }}</div>
+                </td>
+              </tr>
+              {{- end }}
+              {{- if $a.GeneratorURL }}
+              <tr>
+                <td style="padding:10px 18px 16px 18px;">
+                  <a href="{{ $a.GeneratorURL }}" style="font-size:12px;color:#2563eb;text-decoration:none;">查看 Prometheus 规则图表 →</a>
+                </td>
+              </tr>
+              {{- else }}
+              <tr><td style="padding:0 0 8px 0;"></td></tr>
+              {{- end }}
+            </table>
+            {{- end }}
+          </td>
+        </tr>
+
+        <!-- 页脚 -->
+        <tr>
+          <td style="padding:16px 24px 22px 24px;border-top:1px solid #e3e8ef;background-color:#fbfcfe;">
+            <div style="font-size:12px;line-height:1.8;color:#94a3b8;">
+              告警中心：<a href="{{ .ExternalURL }}" style="color:#2563eb;text-decoration:none;">{{ .ExternalURL }}</a><br>
+              排查指引与阈值说明见项目文档 deploy/monitoring/alertmanager/README.md<br>
+              本邮件由 Alertmanager 自动发送，请勿直接回复。
+            </div>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>
+{{- end -}}

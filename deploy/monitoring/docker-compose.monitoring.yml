@@ -1,7 +1,7 @@
 # ============================================================
 # CodeJudge 监控栈 —— 独立部署（与 docker-compose.yml 的中间件互不依赖）
 #
-# 组件：Prometheus 2.54 / Alertmanager 0.27 / Grafana 11.3
+# 组件：Prometheus 2.54 / Alertmanager 0.27 / Grafana 11.3 / alert-sink（本地告警接收端）
 # 端口：Prometheus 9090 ｜ Alertmanager 9093 ｜ Grafana 3001
 #
 # 用法：
@@ -74,6 +74,9 @@ services:
       # 渲染产物写在 /alertmanager 卷里，容器重启会重新渲染 —— 不存在「改了模板但没生效」。
       - ./alertmanager/alertmanager.yml.tpl:/etc/alertmanager/alertmanager.yml.tpl:ro
       - ./alertmanager/entrypoint.sh:/etc/alertmanager/entrypoint.sh:ro
+      # 中文告警邮件模板（主题 / HTML / 纯文本）。配置里的 templates 通配符指向这里；
+      # 目录为空或漏挂时，邮件会退回 Alertmanager 内置英文模板 —— 不会报错，只会「看起来正常」。
+      - ./alertmanager/templates:/etc/alertmanager/templates:ro
       - codejudge-alertmanager-data:/alertmanager
     environment:
       # ---- 通知通道开关（默认「不外发」：本地开发不该往群里发消息）----
@@ -84,6 +87,12 @@ services:
       # 占位 URL：Alertmanager 会校验 webhook url 非空，空串会导致启动失败。
       # 默认路由不指向 webhook/wecom，故该占位地址永远不会被请求。
       ALERTMANAGER_WECOM_WEBHOOK: ${ALERTMANAGER_WECOM_WEBHOOK:-http://127.0.0.1:1/disabled}
+      # 通用 webhook 接收器地址。默认指向本地 alert-sink（下文的 python 服务），
+      # 用于在验收时证明「告警确实被发出并被接收」；生产改成真实接收端或转换器地址。
+      ALERTMANAGER_WEBHOOK_URL: ${ALERTMANAGER_WEBHOOK_URL:-http://alert-sink:8080/alerts}
+      # 运行环境。prod 时任一 RECEIVER 为 null → entrypoint.sh 拒绝启动（fail-closed）；
+      # 其它值只打印 WARN，便于本地开发接受「不外发」。
+      ALERTMANAGER_ENV: ${ALERTMANAGER_ENV:-dev}
       # ---- 邮件通道（email receiver 用）----
       # Alertmanager 会**无条件校验**所有 receiver 的字段，即使该 receiver 没被路由选中。
       #   email_configs 缺 to / smtp 缺 smarthost 都会导致启动失败（实测报
@@ -95,6 +104,9 @@ services:
       ALERTMANAGER_SMTP_AUTH_USERNAME: ${ALERTMANAGER_SMTP_AUTH_USERNAME:-}
       ALERTMANAGER_SMTP_AUTH_PASSWORD: ${ALERTMANAGER_SMTP_AUTH_PASSWORD:-}
       ALERTMANAGER_EMAIL_TO: ${ALERTMANAGER_EMAIL_TO:-alerts@codejudge.invalid}
+      # 邮件正文里「告警中心」链接使用的地址。默认指向本机 9093；
+      # 生产改成收件人可访问的域名，否则邮件里的链接是容器主机名，点不开。
+      ALERTMANAGER_EXTERNAL_URL: ${ALERTMANAGER_EXTERNAL_URL:-http://localhost:9093}
     # 入口脚本负责「渲染模板 → 启动 alertmanager」两步，故不用 command。
     # **不要**改成 `command: --config.expand-env=true`：那是 **Prometheus** 的参数，
     #    Alertmanager v0.27.0 会报 `unknown long flag` 并进入 CrashLoop（已实测）。
@@ -105,6 +117,17 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
+
+  # ---------------- 告警接收端：本地 webhook sink（仅用于验证「发出去了」）----------------
+  # 只监听 compose 内网 8080，**不发布端口**：它不对外提供任何能力，只把收到的告警打到 stdout。
+  # 验证方式：见 alertmanager/README.md §「F1 验收」；日志 `docker logs codejudge-alert-sink`。
+  alert-sink:
+    image: python:3.12-slim
+    container_name: codejudge-alert-sink
+    restart: always
+    volumes:
+      - ./alertmanager/webhook-sink.py:/app/webhook-sink.py:ro
+    command: ["python", "/app/webhook-sink.py"]
 
   # ---------------- Grafana：仪表盘可视化 ----------------
   grafana:

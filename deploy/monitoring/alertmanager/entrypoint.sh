@@ -61,4 +61,27 @@ fi
 echo "[entrypoint] 配置已渲染 -> $OUT"
 echo "[entrypoint] 默认接收器 = ${ALERTMANAGER_DEFAULT_RECEIVER:-<未设置>} ｜ critical = ${ALERTMANAGER_CRITICAL_RECEIVER:-<未设置>}"
 
-exec /bin/alertmanager --config.file="$OUT" --storage.path=/alertmanager
+# ---- 启动期自检：告警出口为空时不允许「静默成功」----
+# 背景：receiver=null 时 Alertmanager 照常启动、UI 正常、preflight 若不细查也全绿，
+#   但**没有任何一条告警会离开本机** —— 这是最危险的静默失效（监控越绿越糟）。
+# 规则：ALERTMANAGER_ENV=prod 时 null 直接拒绝启动；其它（dev/未设置）打印 WARN。
+AM_ENV="${ALERTMANAGER_ENV:-dev}"
+for var in ALERTMANAGER_DEFAULT_RECEIVER ALERTMANAGER_CRITICAL_RECEIVER; do
+    eval "val=\${$var}"
+    if [ -z "$val" ] || [ "$val" = "null" ]; then
+        if [ "$AM_ENV" = "prod" ]; then
+            echo "[entrypoint] FATAL: $var=$val —— 生产环境告警没有出口（只进 UI，等于没有告警）。" >&2
+            echo "[entrypoint]        改用 email 或 webhook；确属临时排查请显式设 ALERTMANAGER_ENV=dev。" >&2
+            exit 1
+        fi
+        echo "[entrypoint] WARN: $var=$val —— 告警不会外发（dev 允许；生产必须接真实通道）" >&2
+    fi
+done
+
+# --web.external-url 决定邮件里「告警中心」链接的地址。
+# 不传时 Alertmanager 会用容器主机名（如 http://0bb4d60eb61b:9093），收件人点不开。
+# 该值只能走命令行参数：0.27 的配置文件里没有 external_url 字段（写了会直接启动失败）。
+exec /bin/alertmanager \
+    --config.file="$OUT" \
+    --storage.path=/alertmanager \
+    --web.external-url="${ALERTMANAGER_EXTERNAL_URL:-http://localhost:9093}"

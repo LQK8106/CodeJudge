@@ -12,11 +12,15 @@
 #
 # 【默认行为】走 `null` receiver：告警只出现在 Alertmanager UI
 #   （http://localhost:9093），**不外发任何通知**。本地开发不该往群里发消息。
+#   `null` **只允许在 dev 出现**：entrypoint.sh 启动时会自检，
+#   `ALERTMANAGER_ENV=prod` 且任一 RECEIVER 为 null → 直接拒绝启动（fail-closed），
+#   dev 则打印 WARN。避免「监控栈全绿、告警却没有出口」的静默失效。
 #
 # 【怎么接真实通道】不改本文件，改环境变量（默认值见 docker-compose.monitoring.yml）：
 #   ALERTMANAGER_DEFAULT_RECEIVER    默认/warning 路由的接收器：null / email / webhook / wecom
 #   ALERTMANAGER_CRITICAL_RECEIVER   critical 路由的接收器（生产不可为 null）
-#   ALERTMANAGER_WECOM_WEBHOOK       企业微信/钉钉 webhook 地址
+#   ALERTMANAGER_WEBHOOK_URL         通用 webhook 接收器地址（默认指向本地 alert-sink，用于验证「发出去了」）
+#   ALERTMANAGER_WECOM_WEBHOOK       企业微信/钉钉 webhook 地址（需要转换器）
 #   ALERTMANAGER_SMTP_* / ALERTMANAGER_EMAIL_TO   邮件通道
 #   改完执行：
 #     cd deploy/monitoring && docker-compose -f docker-compose.monitoring.yml \
@@ -44,6 +48,16 @@ global:
   smtp_auth_username: '${ALERTMANAGER_SMTP_AUTH_USERNAME}'
   smtp_auth_password: '${ALERTMANAGER_SMTP_AUTH_PASSWORD}'
   smtp_require_tls: true
+
+# 告警邮件模板：主题、正文全部中文（文件见同目录 templates/codejudge-email.tmpl）。
+# 模板在容器启动时与内置模板一起解析；这里只加载自定义文件，不改内置默认模板。
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# 注意：邮件里「告警中心」的地址（ExternalURL）**不是**配置项 ——
+# Alertmanager 0.27 会把 external_url 当成未知字段并拒绝启动。
+# 该地址由 entrypoint.sh 通过命令行参数 --web.external-url 传入，
+# 取值来自环境变量 ALERTMANAGER_EXTERNAL_URL（见 docker-compose.monitoring.yml）。
 
 route:
   # 默认接收器由环境变量决定。compose 保证它至少有值 'null'。
@@ -83,21 +97,26 @@ receivers:
   # 本地默认：不打搅任何人
   - name: 'null'
 
-  # 通用 webhook（**需要中间转换器**，见文件头「webhook 的坑」与 README.md）
-  # 占位 URL 保证配置始终合法；只要路由不指向它就不会被调用。
+  # 通用 webhook（直发 Alertmanager 原生 JSON；接机器人需中间转换器，见文件头与 README.md）
+  # 默认指向本地 alert-sink（deploy/monitoring/alertmanager/webhook-sink.py），
+  # 用于证明「告警确实被发出并被 HTTP 接收」；生产填真实接收端即可覆盖。
   - name: 'webhook'
     webhook_configs:
-      - url: '${ALERTMANAGER_WECOM_WEBHOOK}'
+      - url: '${ALERTMANAGER_WEBHOOK_URL}'
         send_resolved: true
         max_alerts: 0            # 0 = 不截断，告警全量发出
 
   # 邮件（原生支持，零中间件）—— 最省事的生产通道
+  # 主题与正文均由 templates/codejudge-email.tmpl 渲染，全中文：
+  #   Subject 走 text 模板；html / text 分别生成 HTML 与纯文本正文（多部分邮件）。
   - name: 'email'
     email_configs:
       - to: '${ALERTMANAGER_EMAIL_TO}'
         send_resolved: true
         headers:
-          Subject: '[{{ .Status | toUpper }}] CodeJudge {{ .CommonLabels.alertname }} ({{ .Alerts | len }})'
+          Subject: '{{ template "cj.email.subject" . }}'
+        html: '{{ template "cj.email.html" . }}'
+        text: '{{ template "cj.email.text" . }}'
 
   # 语义别名：企业微信走 webhook 转换器，单独命名便于阅读配置时一眼看懂意图
   - name: 'wecom'
