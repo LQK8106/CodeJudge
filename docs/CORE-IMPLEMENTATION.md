@@ -461,7 +461,7 @@ Flux<ReviewEventVO> body = Flux.concat(
 ① GET http://localhost:9080/jwks            → 200，无需任何凭证
    {"code":200,"msg":"OK","data":"OU01QU5OSzZjczJtNm1yNUVHZ1l5blNxSGpfajhqd0VuQm1VZTlySkltcTVOZi1FdUY2MWlXaG9YekNwMHRESg=="}
 ② base64 解码 → 64 字节可打印 ASCII（即 CJ_JWT_SECRET 原文）
-③ 用该密钥自签 {userId: <真实管理员id>, roleId: 1, type: "access"}（HS256）
+③ 用该密钥自签 {userId: <真实管理员id>, roleId: 1, type: "access"}（HS512：当时密钥 64 字节；旧文档误写 HS256）
 ④ GET /problems/4001/versions（@RequireRole({STAFF, TEACHER})，只读）
    无凭证 → 401 未登录或登录已过期
    带自签令牌 → 200，正常返回题面版本
@@ -583,7 +583,7 @@ Flux<ReviewEventVO> body = Flux.concat(
 | 15 | **SSE 错误走事件不走 HTTP 状态码** | 首个事件发出后响应头已是 200，无法再改状态码（`ReviewEventVO.java:25-31`） |
 | 16 | **重连回放必须按 `seq` 过滤，不能按下标** | 缓冲做过 `trim`，下标与 id 会整体偏移（`ReviewService.java:551-557`） |
 | 17 | **PG 插入点评用 `INSERT ... RETURNING id`** | PG 驱动在 `RETURN_GENERATED_KEYS` 下 `getKey()` 抛异常 → 「INSERT 成功但拿不到 id」的静默故障（`AiReviewRepository.java:49-70`） |
-| 18 | **JWT 当前是 HMAC 对称签名** | `Keys.hmacShaKeyFor(CJ_JWT_SECRET)`（`JwtTool.java:23-25`；`JwtUtils.java:19-21`）。`ARCHITECTURE.md:14` 的「RS256 + JWKS」为陈旧描述，以代码为准 |
+| 18 | **JWT 当前是 HMAC 对称签名** | `Keys.hmacShaKeyFor(CJ_JWT_SECRET)`（`JwtTool.java:23-25`；`JwtUtils.java:19-21`）。`ARCHITECTURE.md:14` 已于 2026-11-11 同步为「HMAC 对称」 |
 | 19 | **能力码 fail-closed** | 未知 `user.type` 返回空集，而不是给满（`Capabilities.java:159-174`） |
 | 20 | **多实例判题必须限制消费线程数** | `实例数 × CJ_MQ_CONSUME_THREADS ≤ 宿主机 CPU 核数`，否则并发容器冷启动超墙钟预算 → 正确解被判假 TLE（`judge-worker/.../application.yml:67-70`；`RocketMQConsumerContainer.java:37-59`） |
 | 21 | 🔴 **`/jwks` 端点把 HMAC 密钥当"公钥"匿名发出（可签发任意身份令牌）** | 详见下方「4.4 `/jwks` 的问题」。一句话：签名是**对称**的，密钥的 `getEncoded()` 就是共享密钥本体，把它 base64 发出去等于公开签名能力（`JwkController.java:20-23`；`JwtTool.java:81-83`；网关白名单 `JwtProperties.java:39-40`） |
@@ -629,7 +629,7 @@ CJ_MQ_CONSUME_THREADS=4 python scripts/dev-start-backend.py --extra judge-worker
 | 项 | 本文结论（以代码为准） | 既有文档表述 |
 |---|---|---|
 | 判题任务投递通道 | 只走 MQ；Redis ZSet 仅作积压指标 | `ARCHITECTURE.md:128` 称「Redis ZSet + RocketMQ 双通道」 |
-| JWT 签名算法 | HMAC 对称签名（`hmacShaKeyFor` + `CJ_JWT_SECRET`） | `ARCHITECTURE.md:14,86` 称「RS256 + JWKS」 |
-| `/jwks` 端点 | 存在但**无人消费**，且泄露 HMAC 密钥本体（见 §4.4，待修） | `JwkController` 注释称「供网关验签」，`ARCHITECTURE.md:86` 称 RS256 + JWKS —— 两处都与代码不符 |
+| JWT 签名算法 | HMAC 对称签名（`hmacShaKeyFor` + `CJ_JWT_SECRET`） | 已同步：`ARCHITECTURE.md:14,86` 已改为 HMAC 对称（2026-11-11） |
+| `/jwks` 端点 | 已删除（2026-09-25 方案 A，见 §4.4），网关路由与白名单均无 `/jwks` | 已同步：`ARCHITECTURE.md:86` 去掉「JWKS 公钥」表述（2026-11-11） |
 
 > 若这些差异属于有意演进，请同步更新对应文档，避免新同学被误导。

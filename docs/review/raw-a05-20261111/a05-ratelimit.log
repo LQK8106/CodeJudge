@@ -1,0 +1,13 @@
+﻿第  1 次 -> http=200 body_code=401 2163ms
+第  2 次 -> http=200 body_code=401 2103ms
+第  3 次 -> http=200 body_code=401 2102ms
+第  4 次 -> http=200 body_code=401 2116ms
+第  5 次 -> http=200 body_code=401 2081ms
+第  6 次 -> http=200 body_code=401 2103ms
+第  7 次 -> http=200 body_code=401 2099ms
+第  8 次 -> http=200 body_code=401 2087ms
+第  9 次 -> http=200 body_code=401 2084ms
+第 10 次 -> http=200 body_code=401 2112ms
+第 11 次 -> http=200 body_code=401 2106ms
+第 12 次 -> http=200 body_code=401 2084ms
+总耗时 63.0s；分布 {(200, 401): 30}

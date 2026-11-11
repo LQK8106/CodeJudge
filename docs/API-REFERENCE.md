@@ -50,7 +50,7 @@
 | 项 | 说明 |
 |---|---|
 | 认证头 | `Authorization: Bearer <accessToken>` |
-| 令牌算法 | HS256（HMAC 对称签名，密钥 `CJ_JWT_SECRET` 共享给网关；access token 含 `type=access` claim，refresh 只可用于续签） |
+| 令牌算法 | HMAC-SHA 对称签名；具体强度由 `CJ_JWT_SECRET` 长度决定（`Keys.hmacShaKeyFor`：≥64 字节 → HS512，≥48 → HS384，≥32 → HS256；当前 64 字节 → **HS512**）。密钥 `CJ_JWT_SECRET` 共享给网关；access token 含 `type=access` claim，refresh 只可用于续签 |
 | 网关白名单（固定） | `/accounts/login`、`/accounts/admin/login`、`/accounts/refresh`、`/accounts/logout`、`/accounts/password/first-change`、`/students/register`（`/jwks` 已随 2026-09-25 加固删除 —— HMAC 对称密钥没有"公钥"，匿名暴露即交出伪造身份能力） |
 | 网关文档白名单（开关控制） | `/v3/api-docs`、`/v3/api-docs/**`、`/doc.html` —— 仅 `cj.gateway.doc-whitelist-enabled=true`（开发/测试默认，环境变量 `CJ_DOC_WHITELIST_ENABLED`）时匿名可达；**生产置 false 后文档路径不再放行，匿名访问一律 401**（2026-09-28 起，由 `GatewayProperties` 驱动，`AuthGlobalFilter` 匹配） |
 | 下游可见身份 | 网关注入 `user-info: <userId>`、`role-info: <roleId>` |
@@ -106,7 +106,7 @@ POST /accounts/login
 
 | 字段 | 说明 |
 |---|---|
-| `accessToken` | JWT，RS256，30 分钟；携带 `userId` / `roleId`（=`user.type`）claim |
+| `accessToken` | JWT，HMAC-SHA 对称签名（当前密钥长度 64 字节 → HS512），30 分钟；携带 `userId` / `roleId`（=`user.type`）claim |
 | `refreshToken` | 30 天。**同时以 HttpOnly Cookie 下发，不进入响应体**（响应里出现它即为缺陷） |
 | `expireTime` | access token 有效期，单位**秒**（1800） |
 | `role` / `roleLabel` | `user.type` 与中文名（管理员/学员/教师）。前端**不据此判权限**，仅用于顶栏标签 |
