@@ -37,6 +37,13 @@
 
 ---
 
+## 🗓 项目时间线
+
+- **2026-08 起 · 设计期**：技术选型、架构设计、库表设计与本地原型验证，未纳入版本管理，因此没有对应的提交记录。
+- **2026-09-22 · 首次提交**（`414fe01`）：P1–P6 全量交付 —— 8 个后端服务 + Vue 前端 + 监控栈 + 4 语言沙箱 + 压测体系与文档。
+- **2026-09-25 / 09-30 / 10-07 · 迭代轮次**：上线前安全审查收口、上线检查清单与 CI、演示账户与代码草稿（对应 `CHANGELOG.md` 各轮次标题）。
+- **2026-11-07 / 11-11 · 质量收口**：可测性评审（26 项缺口：高 6 / 中 13 / 低 7）与高优先级缺口处置验证（6 项，对应 `CHANGELOG.md` 各轮次标题）。
+
 ## ✨ 项目亮点
 
 | 亮点 | 说明 |
@@ -85,6 +92,11 @@
 | [🚀 部署指南](docs/DEPLOYMENT.md) | 依赖、配置细节、启动流程、环境陷阱、生产检查清单 |
 | [📈 压测实测](docs/PERF.md) | 负载模型、实测数据与瓶颈分析 |
 | [🎯 SLO 与错误预算](docs/SLO.md) | 6 项 SLO 定义与错误预算策略 |
+| [🚦 上线门禁](docs/LAUNCH-CHECKLIST.md) | 阻断/部署/暂缓三态清单，放行单见 [LAUNCH-READINESS](docs/LAUNCH-READINESS.md) |
+| [🧪 可测性评审](docs/review/TESTABILITY-REVIEW-20261107.md) | 26 项缺口分级与处置登记（旧版留档：[DESIGN-TESTABILITY-REVIEW](docs/DESIGN-TESTABILITY-REVIEW.md)） |
+| [🤖 AI 效果评测](docs/ai-eval/report-20261110.md) | AI 点评质量评测结果，评分口径见 [RUBRIC](docs/ai-eval/RUBRIC.md) |
+| [🧭 兼容性矩阵](docs/compat/) | 兼容矩阵与 e2e 原始报告（浏览器/编辑器多版本） |
+| [📦 压测证据包](docs/perf-evidence/2026-10-04-soak-1h/) | 1h 长稳原始快照：JMeter 日志、Prometheus JVM、docker stats |
 | [🗺️ 演进路线](docs/ROADMAP.md) | 防抄袭检测、special judge、K8s 迁移等规划 |
 | [📝 版本记录](CHANGELOG.md) | 里程碑、问题修复、变更明细 |
 | [🤝 贡献指南](CONTRIBUTING.md) | 分支命名、提交规范、PR 流程 |
