@@ -2,26 +2,10 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
-> 本文件起始于 2026.09.22 首次提交，此前为本地设计期，无版本记录。
-
-## [0.1.0] - 2026.08
-
-### Added（设计期，无版本记录）
-- 架构选型：Spring Boot 3 微服务 + Spring Cloud Gateway 统一入口 + RocketMQ 异步判题链路
-  + Redis（缓存/实时榜单/限流）+ MySQL 与 PostgreSQL 分库 + Docker 沙箱
-- 模块划分：gateway / auth / user / problem / submission / contest / ai / worker 八个后端服务
-  + `judge-web` 前端 + 监控栈（Prometheus / Alertmanager / Grafana / Loki）
-- 库表设计：用户、题目、提交、竞赛、AI 评审五套 schema、索引与判题状态机（含判题结果回写链路）
-- 本地原型：单机 compose 跑通「提交 → MQ 投递 → 沙箱判题 → 结果回写 → 榜单刷新」闭环
+> **日期口径**：本文件记录自 **2026-09-22 代码首次推送**起；项目**开发起始为 2026-08**（设计期，未纳入版本管理）。
+> **推送日期只代表代码进入版本库的时间，不作为开发起始时间依据**；各版本段标注的日期为里程碑日期，版本段顺序按时间倒序（最新在上）。
 
 ## [Unreleased]
-
-### Added（可测性评审 2026-11-07 轮）
-- 评审范围：6 份设计文档（ARCHITECTURE / ADR-001 / SLO / API-REFERENCE / DEPLOYMENT / LAUNCH-CHECKLIST），
-  只读审查 + 实测证据对标，不改业务代码
-- 结论：26 项可测性缺口（接口契约 6｜异常降级 5｜数据一致性 5｜可观测性 5｜发布回滚 5；
-  文档缺失 15 / 设计缺失 11；分级高 6 / 中 13 / 低 7）
-- 报告：`docs/review/TESTABILITY-REVIEW-20261107.md`（含逐项行号定位与可执行断言建议）
 
 ### Fixed（高优先级缺口处置验证 2026-11-11 轮）
 - 6 项高优先级缺口全部处置并留验证记录：A-05 JWT 算法口径冲突（`a0e2b44`）、
@@ -31,6 +15,13 @@
 - 验证记录：`docs/review/A-05-VERIFY.md`、`B-05-VERIFY.md`、`C-04-VERIFY.md`、
   `D-01-VERIFY.md`、`E-01-KEY-ROTATION-DRILL.md`、`E-04-VERIFY.md`
 - 登记：6 项已处置 + 20 项待办（中 13 / 低 7）写入评审报告（`50cb64a` / `8fe074a`）
+
+### Added（可测性评审 2026-11-07 轮）
+- 评审范围：6 份设计文档（ARCHITECTURE / ADR-001 / SLO / API-REFERENCE / DEPLOYMENT / LAUNCH-CHECKLIST），
+  只读审查 + 实测证据对标，不改业务代码
+- 结论：26 项可测性缺口（接口契约 6｜异常降级 5｜数据一致性与幂等 5｜可观测性 5｜发布回滚 5；
+  文档缺失 15 / 设计缺失 11；分级高 6 / 中 13 / 低 7）
+- 报告：`docs/review/TESTABILITY-REVIEW-20261107.md`（含逐项行号定位与可执行断言建议）
 
 ### Added（系统功能演示账户 2026-10-07 轮）
 - 代码草稿：`judge_submission` 新增 `code_draft` 表（Flyway `V2__code-draft.sql`，
@@ -74,3 +65,20 @@
 - 鉴权收敛：单登录入口 + 能力码按钮权限（`verify-authz.py` 56 项）
 - 第八轮上线前安全审查收口（`/jwks` 删除、token 吊销、IDOR、ORDER BY 注入等，
   详见 `docs/REVIEW-2026-09-25.md`）
+
+## [0.1.0] - 2026-08
+
+> 口径：本段为**开发起始（2026-08）**的设计期记录。该阶段早于版本控制建立，**没有对应提交**；
+> 不以首次推送日期（2026-09-22）倒推开发起始时间。设计依据见 [`PLAN.md`](docs/PLAN.md) 与
+> [`ARCHITECTURE.md`](docs/ARCHITECTURE.md)。
+
+### Added（开发起始 · 设计期，无版本记录）
+- 架构选型：Spring Boot 3 微服务 + Spring Cloud Gateway 统一入口 + RocketMQ 异步判题链路
+  + Redis（缓存/实时榜单/限流）+ MySQL 与 PostgreSQL 分库 + Docker 沙箱
+- 模块划分：gateway / auth / user / problem / submission / contest / ai / worker 八个后端服务
+  + `judge-web` 前端 + 监控栈（Prometheus / Alertmanager / Grafana / Loki）
+- 库表设计：用户、鉴权、题目、提交、竞赛、AI 评审**六套 schema**、索引与判题状态机
+  （含判题结果回写链路）；六库对应 `judge-auth/user/problem/submission/contest`（MySQL）
+  与 `judge-ai`（PostgreSQL），详见各服务 `V1__baseline.sql`
+- 本地原型：单机 compose 跑通「提交 → MQ 投递 → 沙箱判题 → 结果回写 → 榜单刷新」闭环；
+  该原型仅验证单链路连通性，未做并发与安全加固（后者见 2026-09-25 轮）
