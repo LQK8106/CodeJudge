@@ -8,13 +8,13 @@
 ## [Unreleased]
 
 ### Fixed（高优先级缺口处置验证 2026-11-11 轮）
-- 6 项高优先级缺口全部处置并留验证记录：A-05 JWT 算法口径冲突（`a0e2b44`）、
-  B-05 告警出口为空（`86fb703`）、C-04 成功态空正文（`54eabfc`）、
-  D-01 requestId 跨 MQ 断链（`482e896`）、E-01 换钥全站 401（`8d37ae7`）、
-  E-04 发布顺序无启动期校验（`4da283a`）
+- 6 项高优先级缺口全部处置并留验证记录：A-05 JWT 算法口径冲突（`e3b1717`）、
+  B-05 告警出口为空（`f527f29`）、C-04 成功态空正文（`8d6d7d1`）、
+  D-01 requestId 跨 MQ 断链（`7c17917`）、E-01 换钥全站 401（`ebf2d7f`）、
+  E-04 发布顺序无启动期校验（`d6fdd9e`）
 - 验证记录：`docs/review/A-05-VERIFY.md`、`B-05-VERIFY.md`、`C-04-VERIFY.md`、
   `D-01-VERIFY.md`、`E-01-KEY-ROTATION-DRILL.md`、`E-04-VERIFY.md`
-- 登记：6 项已处置 + 20 项待办（中 13 / 低 7）写入评审报告（`50cb64a` / `8fe074a`）
+- 登记：6 项已处置 + 20 项待办（中 13 / 低 7）写入评审报告（`dfa938e` / `0c14938`）
 
 ### Added（可测性评审 2026-11-07 轮）
 - 评审范围：6 份设计文档（ARCHITECTURE / ADR-001 / SLO / API-REFERENCE / DEPLOYMENT / LAUNCH-CHECKLIST），
