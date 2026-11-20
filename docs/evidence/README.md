@@ -43,6 +43,7 @@
 |---|---|
 | 结论、评级、放行建议、风险排序 | [QUALITY-SUMMARY.md](../quality/QUALITY-SUMMARY.md)（84 行，建议先看这个） |
 | 每个数字的实测值与来源 | [TEST-REPORT.md](../quality/TEST-REPORT.md)（125 行，逐行括注出处） |
+| 测试怎么设计的：范围、方法、取舍、局限 | [01-approach.md](01-approach.md)（120 行，不含数字，只讲方法） |
 | 30 项门禁逐项判定 | [RELEASE-GATE.md](../quality/RELEASE-GATE.md) |
 | 每个缺陷的现象 / 根因 / 修复 / 验证 | [DEFECTS.md](../quality/DEFECTS.md) |
 | 性能测试方法与陷阱 | [PERF.md](../PERF.md) §3–§5 + `perf-test/README.md` |
