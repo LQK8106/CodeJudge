@@ -22,6 +22,10 @@
   8 个可运行服务（9080–9087）· 4 语言安全沙箱 · 实时榜单 WebSocket · Prometheus/Grafana 可观测
 </p>
 
+## 质量证据包
+
+测试方法、评级、放行判定与复现命令见 [docs/evidence/README.md](docs/evidence/README.md)。
+
 ## 📸 项目预览
 
 <details>
