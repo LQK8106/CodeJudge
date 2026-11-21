@@ -20,9 +20,9 @@
 |---|---|---|---|---|---|
 | S1 | P0 | 匿名 `GET /jwks` 可直接拿到 JWT 签名密钥，可离线伪造任意身份 token | HMAC 为对称签名，`getEncoded()` 返回密钥本体；该端点还在免鉴权白名单且全仓无消费方 | 删除 Controller、工具方法、白名单项、网关路由与 Feign 方法；单测改为断言 `type` claim | `/jwks` 返回 404；篡改签名返回 401（原 token 200 对照）（`docs/review/A-05-VERIFY.md`） |
 | S2 | P0 | 30 天有效期的 refresh token 放进 `Authorization` 头即可全权访问 | 网关 `parseIdentity` 不校验 `type` claim；刷新端点也不区分 token 类型 | 网关只放行 `type=access`；`/accounts/refresh` 只接受 `type=refresh` | 登录链路 43/43；契约测试覆盖 token 类型（`docs/review/E-01-KEY-ROTATION-DRILL.md`） |
-| S3 | P0 | 任意学员传管理员 id 即可重置管理员密码（IDOR → 账号接管） | `PUT /users` 无角色注解，目标取请求体 `form.id`，且复用可改密码的 `updateUser` | 目标强制取 `UserContext.getUserId()`；新增 `updateProfile` 只放行 name/icon/email | `verify-authz.py` 56/0 含水平越权断言（`docs/REVIEW-2026-09-25.md` §二） |
-| S4 | P0 | `sortBy` 参数原样进入 `ORDER BY`，存在布尔盲注，影响全部分页接口 | MyBatis-Plus `OrderItem.column` 为字符串拼接 | 列名白名单正则 `^[a-zA-Z][a-zA-Z0-9_]*$`，不匹配回退默认列；同时钳制分页大小与页码 | 鉴权/注入回归 56/0；分页边界用例随 `mvn verify` 通过（同上） |
-| S5 | P1 | 管理端登录别名接口完全不受登录限流保护，可绕过防爆破 | 限流谓词只匹配 `/accounts/login` | 谓词同时匹配 `/accounts/login` 与 `/accounts/admin/login` | preflight C1：12 次瞬时登录 → 5×200 + 7×429（`docs/LAUNCH-READINESS.md` §C） |
+| S3 | P0 | 任意学员传管理员 id 即可重置管理员密码（IDOR → 账号接管） | `PUT /users` 无角色注解，目标取请求体 `form.id`，且复用可改密码的 `updateUser` | 目标强制取 `UserContext.getUserId()`；新增 `updateProfile` 只放行 name/icon/email | 代码复核 2026-11-21 通过；IDOR 负面用例未执行，`verify-authz.py` 不含该断言（见 §8） |
+| S4 | P0 | `sortBy` 参数原样进入 `ORDER BY`，存在布尔盲注，影响全部分页接口 | MyBatis-Plus `OrderItem.column` 为字符串拼接 | 列名白名单正则 `^[a-zA-Z][a-zA-Z0-9_]*$`，不匹配回退默认列；同时钳制分页大小与页码 | 代码复核 2026-11-21 通过；`sortBy` 恶意载荷用例待补（见 §8） |
+| S5 | P1 | 管理端登录别名接口完全不受登录限流保护，可绕过防爆破 | 限流谓词只匹配 `/accounts/login` | 谓词同时匹配 `/accounts/login` 与 `/accounts/admin/login` | preflight C1：12 并发 → 5×HTTP 200（body code=401）+7×429（`docs/LAUNCH-READINESS.md` §C） |
 | H1 | P1 | AI 点评高并发下事件循环被阻塞，历史向量索引静默失效 | Redis 写、JDBC、Embedding `block()`、`doOnCancel` 落库全在 Netty I/O 线程 | 生成链路切 `boundedElastic`，阻塞点全部移出事件循环 | AI 点评链路 46/0；评测 40 样本正常产出（`docs/LAUNCH-READINESS.md` §G） |
 | F1 | P1 | 19 位雪花 ID 被转 Number 后精度截断，AI 点评/历史查询必然 404 且被吞成空列表 | 前端两处 `Number()` 转换超过 `2^53` | 删除转换、字符串透传；同类残留 9 处一并清零 | 三浏览器 15/15（含 AI 点评链路）；Vitest 167/167（`docs/compat/COMPAT-MATRIX-20261107.md`） |
 
@@ -38,8 +38,8 @@
 | M6 | LLM/Embedding 调用无超时可永久挂死消费线程 | WebClient 未配响应超时 | LLM 120s、Embedding 30s + `block(Duration)` 双保险 | AI 链路 46/0 |
 | M7 | 知识入库中途失败导致半写/丢失 | 先删旧再逐片向量化 | 先全部向量化成功，再删旧并批量写入 | 同上 |
 | M8 | 沙箱墙钟强杀只杀 CLI，容器残留 | 只 kill `docker` 客户端进程 | 容器命名 `cj-sbx-<uuid>`，超时补 `docker rm -f` | 判题链路 21/0 |
-| M9 | 任意登录用户可查任意人手机号 | `GET /users/{id}` 无归属校验 | `OwnerAccessGuard`：本人/员工/内部调用放行 | 鉴权 56/0 |
-| M10 | 改密缺字段返回 500，新密码可设 1 位 | 无判空与长度校验 | 判空 + 6~64 位（对齐 BCrypt 72 字节上限） | 鉴权 56/0 |
+| M9 | 任意登录用户可查任意人手机号 | `GET /users/{id}` 无归属校验 | `UserService.queryById` 按视角裁剪：本人/员工/教师/内部全量，其余走 `UserVO.ofPublic`（`OwnerAccessGuard` 仅用于题目归属） | 代码复核 2026-11-21 通过；专项脚本待补（见 §8） |
+| M10 | 改密缺字段返回 500，新密码可设 1 位 | 无判空与长度校验 | 判空 + 6~64 位（对齐 BCrypt 72 字节上限） | 代码复核 2026-11-21（`UserService.changePassword`）；长度边界无专项用例（见 §8） |
 | M11 | refresh token 随响应体下发，架空 HttpOnly | VO 字段未屏蔽 | 字段加 `@JsonIgnore`；登录断言同步反转 | 登录 43/0 |
 | M12 | Cookie 的 Secure/Domain 属性设置了但不生效，多枚 Cookie 被吞 | 格式串位置错、`setHeader` 覆盖 | 改 `addHeader` 并按需拼接全部属性 | 登录 43/0 |
 | M13 | 生产会暴露完整接口清单 | springdoc 未做 profile 分离 | **暂缓**：本地验收依赖 `/doc.html`；已改为生产开关并在部署清单置 false | `docs/LAUNCH-CHECKLIST.md` D5 |
@@ -55,7 +55,7 @@
 | 编号 | 现象 | 根因 | 修复 | 验证 |
 |---|---|---|---|---|
 | L1 | CJK 代码按字符数校验，落库超 TEXT 64KB 报 500 | 用 `String.length()` 而非 UTF-8 字节数 | 改按 UTF-8 字节数校验 | `mvn verify` 358/0 |
-| L2 | 进程重启后用户可能被永久限流 | INCR/EXPIRE 非原子，留下无 TTL key | TTL 缺失时补偿补期 | 鉴权回归 56/0 |
+| L2 | 进程重启后用户可能被永久限流 | INCR/EXPIRE 非原子，留下无 TTL key | TTL 缺失时补偿补期 | `SubmissionServiceTest`「INCR/EXPIRE 非原子残留无 TTL key（getExpire=-1）→ 补偿 TTL」 |
 | L3 | 毒消息重投 16 次 | 反序列化异常外抛 | 解析失败记录后丢弃 | 判题链路 21/0 |
 | L4 | AI 点评毒消息重复消费 | 同上 | 同上 | AI 链路 46/0 |
 | L5 | 竞赛用户名缓存条目永不删除 | 只有逻辑 TTL，无清理 | 超 10 000 条清理过期项 | `mvn verify` |
@@ -101,3 +101,26 @@
 | 5 | Java 堆内 MLE 判为 RE | 判题语义偏差 | 按语言特化捕获 OOM |
 
 逐条修复细节与代码位置见 `docs/REVIEW-2026-09-25.md`、`docs/PERF.md` §3.5/§3.7/§四。
+
+## 8. 「已修复」声明复核（2026-11-21）
+
+> 方法：对 S1–S5、M9 逐条对照公开代码；可安全执行的只读探针补运行态证据。结论：**漏洞修复本身均在代码中存在，未发现“代码未修却标已修”**；发现 4 处证据引用/表述与现有脚本或代码不一致，需更正。
+
+| 编号 | 声明要点 | 公开代码复核 | 运行态/脚本复核 | 结论 |
+|---|---|---|---|---|
+| S1 | 删除 `/jwks` 全链路 | 全仓 `jwks` 仅剩 `JwtTool` 注释；无 Controller、白名单项、网关路由、Feign 方法 | 2026-11-21 `GET /jwks` → 404；对照 `/problems/page` → 200 | ✅ PASS |
+| S2 | 网关仅接受 `type=access`；刷新端点仅接受 `type=refresh` | `JwtUtils.parseIdentity` 第 87 行校验 `access`；`AccountService.refresh` 第 186 行校验 `refresh`；主代码身份解析均走 `parseIdentity` | access 调 `/accounts/me/capabilities` → 200；同一枚 refresh 放 `Authorization` → **401 / code=401** | ✅ PASS |
+| S3 | `PUT /users` 取 `UserContext`；`updateProfile` 仅 name/icon/email | `UserController.updateCurrentUser` 第 144–151 行；`UserService.updateProfile` 第 233–249 行只写三个展示字段，忽略 id/password/status/type/cellPhone | 以管理员为目标的负面利用**未执行**（风险策略拒绝）；`verify-authz.py` 无该 IDOR 断言 | 代码 ✅ / 证据 ⚠ |
+| S4 | `sortBy` 白名单 + 分页钳制 | `PageQuery` 第 26 行正则、第 40–45 行应用、第 36–38 行钳制 | `verify-authz.py`、`test-suite-qa.py` 均无 `sortBy` 注入用例；无 `PageQuery` 单测 | 代码 ✅ / 证据 ⚠ |
+| S5 | 两个登录入口同受限流 | `judge-gateway/application.yml` 第 125 行覆盖 `/accounts/login`、`/accounts/admin/login` 及 `/v1` 形态 | `docs/review/A-05-VERIFY.md`：12 并发 → 5×HTTP 200（body code=401）+7×429 | ✅ PASS / 表述需改 |
+| M9 | `GET /users/{id}` PII 越权 | 实际修复在 `UserService.queryById` 第 147–161 行与 `canViewFullProfile` 第 168–174 行，不是 `OwnerAccessGuard`（后者仅用于 `ProblemService`） | 无专项脚本 | 结果 ✅ / 机制描述需改 |
+
+**证据引用更正**：
+
+- S3 原引“`verify-authz.py` 56/0 含水平越权断言”不成立：该脚本 2026-11-21 实跑 **67 通过 / 0 失败 / 1 跳过**，覆盖登录、能力码、内部端点 fail-closed，**不含** `PUT /users` IDOR。
+- S4 原引“鉴权/注入回归 56/0”不能作为 `sortBy` 证据：现有脚本的注入探测针对 `keyword` 参数（`test-suite-qa.py` QA-C06），不是 `sortBy`；需补 `PageQuery` 单测或恶意载荷用例。
+- S5 应写“5×HTTP 200（body code=401）+7×429”，避免被读成 5 次登录成功。
+- M9 应写 `UserService.canViewFullProfile` / `UserVO.ofPublic`；`OwnerAccessGuard` 仅用于题目归属校验，`UserController` 中仅剩未使用的 import。
+- **M10、L2 的「鉴权 56/0」同样失效**：该数字来自旧版脚本，现脚本为 67 用例且不含改密与限流恢复断言。M10 改以代码复核为准（`UserService.changePassword` 判空 + 6~64 位，无长度边界用例）；L2 改以 `SubmissionServiceTest` 的「无 TTL key → 补偿 TTL」用例为准。
+
+**流程建议**：DEFECTS 的“验证”列应指向可执行、可复跑的脚本与用例编号，而不是会随脚本演进而漂移的“56/0”；新增修复必须同时提交对应断言，否则只能标“代码已改、证据待补”。
